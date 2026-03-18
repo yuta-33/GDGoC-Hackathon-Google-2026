@@ -8,27 +8,5 @@ const defaultPetProfile = PetProfile(
   neckGirth: 42,
   chestGirth: 68,
   backLength: 55,
+  photoPath: null,
 );
-
-const dogBreeds = <String>[
-  'Golden Retriever',
-  'Labrador Retriever',
-  'French Bulldog',
-  'German Shepherd',
-  'Poodle',
-  'Bulldog',
-  'Beagle',
-  'Rottweiler',
-  'Yorkshire Terrier',
-  'Dachshund',
-  'Boxer',
-  'Siberian Husky',
-  'Chihuahua',
-  'Pomeranian',
-  'Shih Tzu',
-  'Corgi',
-  'Border Collie',
-  'Australian Shepherd',
-  'Cavalier King Charles Spaniel',
-  'Cocker Spaniel',
-];

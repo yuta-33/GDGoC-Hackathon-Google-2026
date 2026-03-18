@@ -44,7 +44,10 @@ class AppBottomNav extends StatelessWidget {
       onDestinationSelected: (selected) {
         final route = items[selected].route;
         if (route == currentRoute) return;
-        Navigator.pushReplacementNamed(context, route);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          Navigator.of(context).pushReplacementNamed(route);
+        });
       },
       destinations: [
         for (final item in items)

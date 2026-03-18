@@ -7,6 +7,7 @@ class PetProfile {
     required this.neckGirth,
     required this.chestGirth,
     required this.backLength,
+    this.photoPath,
   });
 
   final String id;
@@ -16,6 +17,7 @@ class PetProfile {
   final double neckGirth;
   final double chestGirth;
   final double backLength;
+  final String? photoPath;
 
   PetProfile copyWith({
     String? id,
@@ -25,6 +27,7 @@ class PetProfile {
     double? neckGirth,
     double? chestGirth,
     double? backLength,
+    String? photoPath,
   }) {
     return PetProfile(
       id: id ?? this.id,
@@ -34,6 +37,7 @@ class PetProfile {
       neckGirth: neckGirth ?? this.neckGirth,
       chestGirth: chestGirth ?? this.chestGirth,
       backLength: backLength ?? this.backLength,
+      photoPath: photoPath ?? this.photoPath,
     );
   }
 }

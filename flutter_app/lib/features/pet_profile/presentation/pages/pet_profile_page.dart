@@ -1,12 +1,18 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_tokens.dart';
+import '../../../../core/models/breed_baseline.dart';
 import '../../../../core/models/pet_profile.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../application/breed_baseline_service.dart';
+import '../../application/pet_analysis_service.dart';
+import '../../application/pet_photo_storage_service.dart';
 import '../../application/pet_profile_provider.dart';
-import '../../data/mock/mock_pet_data.dart';
 
 class PetProfilePage extends ConsumerStatefulWidget {
   const PetProfilePage({super.key});
@@ -25,6 +31,9 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
   final _backController = TextEditingController();
 
   final _breedFocus = FocusNode();
+  final _imagePicker = ImagePicker();
+  bool _isSaving = false;
+  String? _photoPath;
   String _unit = 'KG';
 
   @override
@@ -37,6 +46,7 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
     _neckController.text = current.neckGirth.toString();
     _chestController.text = current.chestGirth.toString();
     _backController.text = current.backLength.toString();
+    _photoPath = current.photoPath;
   }
 
   @override
@@ -51,10 +61,12 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
     super.dispose();
   }
 
-  void _saveProfile() {
-    if (!_formKey.currentState!.validate()) {
+  Future<void> _saveProfile() async {
+    if (_isSaving || !_formKey.currentState!.validate()) {
       return;
     }
+
+    FocusScope.of(context).unfocus();
 
     final next = PetProfile(
       id: '1',
@@ -64,8 +76,47 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
       neckGirth: double.tryParse(_neckController.text.trim()) ?? 0,
       chestGirth: double.tryParse(_chestController.text.trim()) ?? 0,
       backLength: double.tryParse(_backController.text.trim()) ?? 0,
+      photoPath: _photoPath,
     );
+
+    setState(() => _isSaving = true);
     ref.read(petProfileProvider.notifier).saveProfile(next);
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final analysis = await ref
+          .read(petAnalysisServiceProvider)
+          .analyzePet(next);
+      debugPrint(
+        'Pet analysis result: petType=${analysis.petType}, '
+        'furColor=${analysis.furColor}, bodySize=${analysis.bodySize}, '
+        'styleTags=${analysis.styleTags.join(',')}',
+      );
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'AI analyzed ${analysis.petType} / '
+            '${analysis.furColor} / ${analysis.bodySize}',
+          ),
+        ),
+      );
+    } catch (error) {
+      debugPrint('Pet analysis request failed: $error');
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('AI analysis failed. Continuing with local profile.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+
+    if (!mounted) {
+      return;
+    }
     Navigator.pushReplacementNamed(context, AppRouter.home);
   }
 
@@ -83,25 +134,17 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
                 ListTile(
                   leading: const Icon(Icons.camera_alt_outlined),
                   title: const Text('Take photo'),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Camera integration pending'),
-                      ),
-                    );
+                    await _pickPetPhoto(ImageSource.camera);
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.photo_library_outlined),
                   title: const Text('Choose from gallery'),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Gallery integration pending'),
-                      ),
-                    );
+                    await _pickPetPhoto(ImageSource.gallery);
                   },
                 ),
               ],
@@ -112,13 +155,84 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
     );
   }
 
+  Future<void> _pickPetPhoto(ImageSource source) async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 90,
+        maxWidth: 1600,
+      );
+      if (pickedFile == null) {
+        return;
+      }
+
+      final savedPath = await ref
+          .read(petPhotoStorageServiceProvider)
+          .savePhoto(
+            sourceFile: File(pickedFile.path),
+            previousPhotoPath: _photoPath,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _photoPath = savedPath);
+      debugPrint('Pet photo saved to: $savedPath');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pet photo saved to local pet_photos folder.'),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      debugPrint('Pet photo pick failed: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to pick pet photo.')),
+      );
+    }
+  }
+
+  void _applyBreedBaseline(BreedBaseline baseline) {
+    _breedController.text = baseline.displayName;
+    _breedController.selection = TextSelection.collapsed(
+      offset: baseline.displayName.length,
+    );
+    _weightController.text = baseline.weightKg.toStringAsFixed(1);
+    _neckController.text = baseline.neckGirthCm.toStringAsFixed(1);
+    _chestController.text = baseline.chestGirthCm.toStringAsFixed(1);
+    _backController.text = baseline.backLengthCm.toStringAsFixed(1);
+  }
+
+  Widget _buildPetPhotoAvatar() {
+    final photoPath = _photoPath;
+    if (photoPath == null || photoPath.isEmpty) {
+      return const CircleAvatar(
+        radius: 48,
+        backgroundColor: Color(0xFFCCFBF1),
+        child: Text('🐾', style: TextStyle(fontSize: 40)),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 48,
+      backgroundColor: const Color(0xFFCCFBF1),
+      backgroundImage: FileImage(File(photoPath)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final breedBaselines =
+        ref.watch(breedBaselinesProvider).valueOrNull ??
+        const <BreedBaseline>[];
     final typedBreed = _breedController.text.trim().toLowerCase();
     final suggestions = typedBreed.isEmpty
-        ? dogBreeds.take(5).toList()
-        : dogBreeds
-              .where((b) => b.toLowerCase().contains(typedBreed))
+        ? breedBaselines.take(5).toList()
+        : breedBaselines
+              .where((b) => b.displayName.toLowerCase().contains(typedBreed))
               .take(5)
               .toList();
     final showSuggestions = _breedFocus.hasFocus && suggestions.isNotEmpty;
@@ -128,9 +242,9 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: PrimaryButton(
-          label: 'Save Profile',
+          label: _isSaving ? 'Analyzing...' : 'Save Profile',
           icon: Icons.arrow_forward_rounded,
-          onPressed: _saveProfile,
+          onPressed: _isSaving ? null : _saveProfile,
         ),
       ),
       body: SafeArea(
@@ -155,11 +269,7 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
               Center(
                 child: Stack(
                   children: [
-                    const CircleAvatar(
-                      radius: 48,
-                      backgroundColor: Color(0xFFCCFBF1),
-                      child: Text('🐾', style: TextStyle(fontSize: 40)),
-                    ),
+                    _buildPetPhotoAvatar(),
                     Positioned(
                       right: 0,
                       bottom: 0,
@@ -183,7 +293,9 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
               TextButton.icon(
                 onPressed: _showImageSourceSheet,
                 icon: const Icon(Icons.upload_rounded),
-                label: const Text('Upload Pet Photo'),
+                label: Text(
+                  _photoPath == null ? 'Upload Pet Photo' : 'Change Pet Photo',
+                ),
               ),
               TextFormField(
                 controller: _nameController,
@@ -219,14 +331,14 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
                         .map(
                           (breed) => ListTile(
                             dense: true,
-                            title: Text(breed),
+                            title: Text(breed.displayName),
+                            subtitle: Text(
+                              'Std: ${breed.weightKg.toStringAsFixed(1)}kg / '
+                              '${breed.neckGirthCm.toStringAsFixed(0)}-${breed.chestGirthCm.toStringAsFixed(0)}-${breed.backLengthCm.toStringAsFixed(0)}cm',
+                            ),
                             onTap: () {
                               setState(() {
-                                _breedController.text = breed;
-                                _breedController.selection =
-                                    TextSelection.collapsed(
-                                      offset: breed.length,
-                                    );
+                                _applyBreedBaseline(breed);
                               });
                               _breedFocus.unfocus();
                             },

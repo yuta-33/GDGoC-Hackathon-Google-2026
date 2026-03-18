@@ -1,0 +1,92 @@
+PETS = [
+    {
+        "petId": "pet_001",
+        "name": "Buddy",
+        "type": "dog",
+        "breed": "Golden Retriever",
+        "age": 3,
+        "weight": 28.5,
+        "gender": "male",
+        "furColor": "golden",
+        "imageUrl": "https://example.com/pets/buddy.png",
+        "sizeNote": "Athletic medium-large frame",
+        "neckGirthCm": 42.0,
+        "chestGirthCm": 68.0,
+        "backLengthCm": 55.0,
+    },
+    {
+        "petId": "pet_002",
+        "name": "Milo",
+        "type": "dog",
+        "breed": "Jack Russell Terrier",
+        "age": 2,
+        "weight": 7.0,
+        "gender": "male",
+        "furColor": "white and brown",
+        "imageUrl": "https://example.com/pets/milo.png",
+        "sizeNote": "Compact active build",
+        "neckGirthCm": 26.0,
+        "chestGirthCm": 40.0,
+        "backLengthCm": 30.0,
+    },
+]
+
+
+CLOSET_ITEMS = [
+    {
+        "clothingId": "closet_001",
+        "ownerId": "demo_user",
+        "name": "Argyle Knit Vest",
+        "category": "Top",
+        "color": "gray",
+        "size": "M",
+        "brand": "Pawsace",
+        "seasonTags": ["autumn", "winter"],
+        "imageUrl": "https://example.com/closet/argyle_vest.png",
+        "sourceUrl": "https://example.com/products/argyle_vest",
+    },
+    {
+        "clothingId": "closet_002",
+        "ownerId": "demo_user",
+        "name": "Pastel Hoodie",
+        "category": "Hoodie",
+        "color": "blue",
+        "size": "M",
+        "brand": "Barkberry",
+        "seasonTags": ["spring", "casual"],
+        "imageUrl": "https://example.com/closet/pastel_hoodie.png",
+        "sourceUrl": "https://example.com/products/pastel_hoodie",
+    },
+    {
+        "clothingId": "closet_003",
+        "ownerId": "demo_user",
+        "name": "Classic Rain Coat",
+        "category": "Coat",
+        "color": "yellow",
+        "size": "L",
+        "brand": "Pupreme",
+        "seasonTags": ["rainy", "outdoor"],
+        "imageUrl": "https://example.com/closet/rain_coat.png",
+        "sourceUrl": "https://example.com/products/rain_coat",
+    },
+]
+
+
+SAVED_LOOKS = [
+    {
+        "lookId": "look_001",
+        "petId": "pet_001",
+        "clothingIds": ["closet_001", "closet_002"],
+        "thumbnailUrl": "https://example.com/looks/look_001.png",
+        "memo": "Soft casual look for weekend walks",
+        "createdAt": "2026-03-18T12:00:00Z",
+    },
+    {
+        "lookId": "look_002",
+        "petId": "pet_002",
+        "clothingIds": ["closet_003"],
+        "thumbnailUrl": "https://example.com/looks/look_002.png",
+        "memo": "Functional rainy-day outfit",
+        "createdAt": "2026-03-18T12:05:00Z",
+    },
+]

@@ -134,7 +134,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 0.72,
+              childAspectRatio: 0.68,
             ),
             itemBuilder: (context, index) {
               final product = result[index];

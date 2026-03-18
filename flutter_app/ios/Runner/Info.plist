@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>PetFit AI uses the camera to capture your pet photo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>PetFit AI uses your photo library to select a pet photo.</string>
 </dict>
 </plist>

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +9,20 @@ import '../../../pet_profile/application/pet_profile_provider.dart';
 
 class PetsPage extends ConsumerWidget {
   const PetsPage({super.key});
+
+  Widget _buildPetAvatar(String? photoPath) {
+    if (photoPath == null || photoPath.isEmpty) {
+      return const CircleAvatar(
+        radius: 28,
+        child: Text('🐕', style: TextStyle(fontSize: 26)),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 28,
+      backgroundImage: FileImage(File(photoPath)),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,10 +49,7 @@ class PetsPage extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const CircleAvatar(
-                        radius: 28,
-                        child: Text('🐕', style: TextStyle(fontSize: 26)),
-                      ),
+                      _buildPetAvatar(pet.photoPath),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
