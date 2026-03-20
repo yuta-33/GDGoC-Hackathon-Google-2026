@@ -1,0 +1,11 @@
+.DS_Store
+.gcloud-config/
+backend/.DS_Store
+backend/.venv/
+backend/__pycache__/
+backend/petfashion.db
+backend/petfashion.db-shm
+backend/petfashion.db-wal
+IMG_2129.JPG
+IMG_2129.png
+vertex_tryon_*.png

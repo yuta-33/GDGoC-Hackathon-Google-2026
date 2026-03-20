@@ -130,61 +130,64 @@ class ProfilePage extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: Card(
-              margin: const EdgeInsets.only(top: -16),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: const [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Text(
-                            '12',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+            child: Transform.translate(
+              offset: const Offset(0, -16),
+              child: Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 14,
+                  ),
+                  child: Row(
+                    children: const [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              '12',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          Text('Orders'),
-                        ],
+                            Text('Orders'),
+                          ],
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Text(
-                            '28',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              '28',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          Text('Favorites'),
-                        ],
+                            Text('Favorites'),
+                          ],
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Text(
-                            '3',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              '3',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          Text('Reviews'),
-                        ],
+                            Text('Reviews'),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -222,6 +225,21 @@ class ProfilePage extends StatelessWidget {
                     accent: true,
                     onTap: () =>
                         Navigator.pushNamed(context, AppRouter.notifications),
+                  ),
+                  _menuTile(
+                    context,
+                    title: 'My Closet',
+                    icon: Icons.checkroom_outlined,
+                    accent: true,
+                    onTap: () => Navigator.pushNamed(context, AppRouter.closet),
+                  ),
+                  _menuTile(
+                    context,
+                    title: 'Saved Looks',
+                    icon: Icons.bookmarks_outlined,
+                    accent: true,
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRouter.savedLooks),
                   ),
                 ],
               ),

@@ -9,7 +9,9 @@ import '../../../../app/theme/app_tokens.dart';
 import '../../../../core/models/breed_baseline.dart';
 import '../../../../core/models/pet_profile.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../pets/application/pets_service.dart';
 import '../../application/breed_baseline_service.dart';
+import '../../application/device_capability_service.dart';
 import '../../application/pet_analysis_service.dart';
 import '../../application/pet_photo_storage_service.dart';
 import '../../application/pet_profile_provider.dart';
@@ -22,6 +24,8 @@ class PetProfilePage extends ConsumerStatefulWidget {
 }
 
 class _PetProfilePageState extends ConsumerState<PetProfilePage> {
+  static const _kgToLbFactor = 2.2046226218;
+
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _breedController = TextEditingController();
@@ -32,6 +36,7 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
 
   final _breedFocus = FocusNode();
   final _imagePicker = ImagePicker();
+  late final ProviderSubscription<PetProfile> _petProfileSubscription;
   bool _isSaving = false;
   String? _photoPath;
   String _unit = 'KG';
@@ -39,18 +44,18 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
   @override
   void initState() {
     super.initState();
-    final current = ref.read(petProfileProvider);
-    _nameController.text = current.name;
-    _breedController.text = current.breed;
-    _weightController.text = current.weight.toString();
-    _neckController.text = current.neckGirth.toString();
-    _chestController.text = current.chestGirth.toString();
-    _backController.text = current.backLength.toString();
-    _photoPath = current.photoPath;
+    _syncControllers(ref.read(petProfileProvider), updateState: false);
+    _petProfileSubscription = ref.listenManual(petProfileProvider, (_, next) {
+      if (_isSaving) {
+        return;
+      }
+      _syncControllers(next);
+    });
   }
 
   @override
   void dispose() {
+    _petProfileSubscription.close();
     _nameController.dispose();
     _breedController.dispose();
     _weightController.dispose();
@@ -61,6 +66,58 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
     super.dispose();
   }
 
+  void _syncControllers(PetProfile profile, {bool updateState = true}) {
+    final nextUnit = profile.weightUnit;
+    final nextWeight = _toDisplayWeight(profile.weight, nextUnit);
+    _nameController.text = profile.name;
+    _breedController.text = profile.breed;
+    _weightController.text = _formatDecimal(nextWeight);
+    _neckController.text = _formatDecimal(profile.neckGirth);
+    _chestController.text = _formatDecimal(profile.chestGirth);
+    _backController.text = _formatDecimal(profile.backLength);
+    _photoPath = profile.photoPath;
+
+    if (updateState && mounted) {
+      setState(() => _unit = nextUnit);
+    } else {
+      _unit = nextUnit;
+    }
+  }
+
+  String _formatDecimal(double value) {
+    return value.toStringAsFixed(1);
+  }
+
+  double _toDisplayWeight(double kilograms, String unit) {
+    if (unit == 'LB') {
+      return kilograms * _kgToLbFactor;
+    }
+    return kilograms;
+  }
+
+  double _toStoredWeight(double displayWeight) {
+    if (_unit == 'LB') {
+      return displayWeight / _kgToLbFactor;
+    }
+    return displayWeight;
+  }
+
+  void _handleUnitChange(String nextUnit) {
+    if (nextUnit == _unit) {
+      return;
+    }
+
+    final currentValue = double.tryParse(_weightController.text.trim());
+    if (currentValue != null) {
+      final convertedValue = nextUnit == 'LB'
+          ? currentValue * _kgToLbFactor
+          : currentValue / _kgToLbFactor;
+      _weightController.text = _formatDecimal(convertedValue);
+    }
+
+    setState(() => _unit = nextUnit);
+  }
+
   Future<void> _saveProfile() async {
     if (_isSaving || !_formKey.currentState!.validate()) {
       return;
@@ -68,26 +125,42 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
 
     FocusScope.of(context).unfocus();
 
+    final displayWeight = double.tryParse(_weightController.text.trim()) ?? 0;
+
     final next = PetProfile(
       id: '1',
       name: _nameController.text.trim(),
       breed: _breedController.text.trim(),
-      weight: double.tryParse(_weightController.text.trim()) ?? 0,
+      weight: _toStoredWeight(displayWeight),
+      weightUnit: _unit,
       neckGirth: double.tryParse(_neckController.text.trim()) ?? 0,
       chestGirth: double.tryParse(_chestController.text.trim()) ?? 0,
       backLength: double.tryParse(_backController.text.trim()) ?? 0,
       photoPath: _photoPath,
     );
 
-    setState(() => _isSaving = true);
-    ref.read(petProfileProvider.notifier).saveProfile(next);
-
     final messenger = ScaffoldMessenger.of(context);
+    var persistedProfile = next;
+    setState(() => _isSaving = true);
+
+    try {
+      persistedProfile = await ref.read(petsServiceProvider).savePet(next);
+      ref.invalidate(petsProvider);
+    } catch (error) {
+      debugPrint('Pet save request failed: $error');
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Cloud save failed. Continuing with local profile.'),
+        ),
+      );
+    }
+
+    await ref.read(petProfileProvider.notifier).saveProfile(persistedProfile);
 
     try {
       final analysis = await ref
           .read(petAnalysisServiceProvider)
-          .analyzePet(next);
+          .analyzePet(persistedProfile);
       debugPrint(
         'Pet analysis result: petType=${analysis.petType}, '
         'furColor=${analysis.furColor}, bodySize=${analysis.bodySize}, '
@@ -96,7 +169,7 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            'AI analyzed ${analysis.petType} / '
+            'Saved ${persistedProfile.name}. AI analyzed ${analysis.petType} / '
             '${analysis.furColor} / ${analysis.bodySize}',
           ),
         ),
@@ -120,7 +193,7 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
     Navigator.pushReplacementNamed(context, AppRouter.home);
   }
 
-  void _showImageSourceSheet() {
+  void _showImageSourceSheet({required bool cameraAvailable}) {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -131,17 +204,29 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.camera_alt_outlined),
-                  title: const Text('Take photo'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _pickPetPhoto(ImageSource.camera);
-                  },
-                ),
+                if (cameraAvailable)
+                  ListTile(
+                    leading: const Icon(Icons.camera_alt_outlined),
+                    title: const Text('Take photo'),
+                    subtitle: const Text('Use your device camera'),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _pickPetPhoto(ImageSource.camera);
+                    },
+                  )
+                else
+                  const ListTile(
+                    leading: Icon(Icons.camera_alt_outlined),
+                    title: Text('Take photo'),
+                    subtitle: Text(
+                      'Camera is unavailable on simulator. Use gallery instead.',
+                    ),
+                    enabled: false,
+                  ),
                 ListTile(
                   leading: const Icon(Icons.photo_library_outlined),
                   title: const Text('Choose from gallery'),
+                  subtitle: const Text('Pick an existing dog photo'),
                   onTap: () async {
                     Navigator.pop(context);
                     await _pickPetPhoto(ImageSource.gallery);
@@ -200,7 +285,9 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
     _breedController.selection = TextSelection.collapsed(
       offset: baseline.displayName.length,
     );
-    _weightController.text = baseline.weightKg.toStringAsFixed(1);
+    _weightController.text = _formatDecimal(
+      _toDisplayWeight(baseline.weightKg, _unit),
+    );
     _neckController.text = baseline.neckGirthCm.toStringAsFixed(1);
     _chestController.text = baseline.chestGirthCm.toStringAsFixed(1);
     _backController.text = baseline.backLengthCm.toStringAsFixed(1);
@@ -216,15 +303,21 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
       );
     }
 
+    final imageProvider = photoPath.startsWith('assets/')
+        ? AssetImage(photoPath)
+        : FileImage(File(photoPath)) as ImageProvider<Object>;
+
     return CircleAvatar(
       radius: 48,
       backgroundColor: const Color(0xFFCCFBF1),
-      backgroundImage: FileImage(File(photoPath)),
+      backgroundImage: imageProvider,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final cameraAvailable =
+        ref.watch(cameraAvailableProvider).valueOrNull ?? false;
     final breedBaselines =
         ref.watch(breedBaselinesProvider).valueOrNull ??
         const <BreedBaseline>[];
@@ -274,7 +367,9 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
                       right: 0,
                       bottom: 0,
                       child: InkWell(
-                        onTap: _showImageSourceSheet,
+                        onTap: () => _showImageSourceSheet(
+                          cameraAvailable: cameraAvailable,
+                        ),
                         borderRadius: BorderRadius.circular(20),
                         child: const CircleAvatar(
                           radius: 18,
@@ -291,12 +386,20 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
                 ),
               ),
               TextButton.icon(
-                onPressed: _showImageSourceSheet,
+                onPressed: () =>
+                    _showImageSourceSheet(cameraAvailable: cameraAvailable),
                 icon: const Icon(Icons.upload_rounded),
                 label: Text(
                   _photoPath == null ? 'Upload Pet Photo' : 'Change Pet Photo',
                 ),
               ),
+              Text(
+                cameraAvailable
+                    ? 'Photos are stored locally on this device first.'
+                    : 'Simulator cannot open the real camera. Import from gallery instead.',
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _nameController,
                 textInputAction: TextInputAction.next,
@@ -373,8 +476,7 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
                   const SizedBox(width: 8),
                   SegmentedButton<String>(
                     selected: {_unit},
-                    onSelectionChanged: (set) =>
-                        setState(() => _unit = set.first),
+                    onSelectionChanged: (set) => _handleUnitChange(set.first),
                     segments: const [
                       ButtonSegment(value: 'KG', label: Text('KG')),
                       ButtonSegment(value: 'LB', label: Text('LB')),

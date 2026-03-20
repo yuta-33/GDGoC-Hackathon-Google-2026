@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/brand/presentation/pages/brand_page.dart';
+import '../../features/closet/presentation/pages/closet_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
@@ -8,6 +9,7 @@ import '../../features/pet_profile/presentation/pages/pet_profile_page.dart';
 import '../../features/pets/presentation/pages/pets_page.dart';
 import '../../features/product/presentation/pages/product_detail_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/saved_looks/presentation/pages/saved_looks_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
 import '../../features/shop/presentation/pages/shop_page.dart';
 import '../../features/size_guide/presentation/pages/size_guide_page.dart';
@@ -23,6 +25,8 @@ class AppRouter {
   static const tryOn = '/try-on';
   static const pets = '/pets';
   static const profile = '/profile';
+  static const closet = '/closet';
+  static const savedLooks = '/saved-looks';
   static const search = '/search';
   static const productDetail = '/product';
   static const brand = '/brand';
@@ -47,6 +51,10 @@ class AppRouter {
         return _material(const PetsPage(), settings);
       case profile:
         return _material(const ProfilePage(), settings);
+      case closet:
+        return _material(const ClosetPage(), settings);
+      case savedLooks:
+        return _material(const SavedLooksPage(), settings);
       case search:
         return _material(const SearchPage(), settings);
       case productDetail:

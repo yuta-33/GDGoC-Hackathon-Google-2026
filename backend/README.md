@@ -1,11 +1,14 @@
 # PetFashion Backend
 
-Minimal Flask backend for local testing and Google Cloud Run deployment.
+Flask backend for local testing and Google Cloud Run deployment.
 
 ## Files
 
-- `app.py`: Flask app with dummy endpoints
-- `seed_data.py`: In-memory dog profiles, closet items, and saved looks
+- `app.py`: Flask app and endpoint definitions
+- `db.py`: Pluggable data store layer
+  - local: SQLite
+  - GCP / Cloud Run: Firestore
+- `seed_data.py`: Seed rows used for first-time DB bootstrap
 - `breed_baselines.py`: Dog breed standard measurement baselines
 - `requirements.txt`: Python dependencies
 - `Dockerfile`: Cloud Run container build definition
@@ -18,6 +21,7 @@ Minimal Flask backend for local testing and Google Cloud Run deployment.
 - `GET /pets`
 - `GET /pets/{petId}`
 - `POST /pets`
+- `PUT /pets/{petId}`
 - `GET /closet/items`
 - `GET /closet/items/{itemId}`
 - `POST /closet/items`
@@ -40,6 +44,29 @@ PORT=8080 python app.py
 ```
 
 Server starts on `http://localhost:8080`.
+
+Default storage backend:
+
+- local shell / tests: SQLite (`backend/petfashion.db`)
+- Cloud Run (`K_SERVICE` present): Firestore
+
+Override explicitly with:
+
+```bash
+export PETFASHION_DATA_BACKEND=sqlite
+```
+
+or
+
+```bash
+export PETFASHION_DATA_BACKEND=firestore
+```
+
+For SQLite, override the DB file with:
+
+```bash
+export PETFASHION_DB_PATH=/path/to/file.db
+```
 
 ## Local Checks With curl
 
@@ -73,6 +100,14 @@ Create pet:
 curl -X POST http://localhost:8080/pets \
   -H "Content-Type: application/json" \
   -d '{"name":"Charlie","breed":"Jack Russell Terrier","weight":7.0,"gender":"male"}'
+```
+
+Update pet:
+
+```bash
+curl -X PUT http://localhost:8080/pets/pet_001 \
+  -H "Content-Type: application/json" \
+  -d '{"petName":"Buddy Updated","breed":"Golden Retriever","weight":30.1}'
 ```
 
 List closet items:
@@ -144,11 +179,29 @@ After deploy, verify:
 curl "YOUR_CLOUD_RUN_URL/health"
 ```
 
+When deployed on Cloud Run, the app defaults to Firestore. Ensure these are in
+place before deploy:
+
+1. Firestore database is created in the same GCP project
+2. Cloud Run service account can access Firestore
+3. `GOOGLE_CLOUD_PROJECT` / ADC are available via the runtime environment
+
+Optional Firestore database selection:
+
+```bash
+gcloud run services update petfashion-backend \
+  --region asia-northeast1 \
+  --update-env-vars PETFASHION_DATA_BACKEND=firestore,FIRESTORE_DATABASE='(default)'
+```
+
 ## Notes
 
 - Uses `PORT` environment variable for startup
+- Mutable resources (`/pets`, `/closet/items`, `/saved-looks`) use the configured data store
+- Firestore is the intended GCP / Cloud Run backend
+- SQLite remains as a local development fallback
+- Seed rows are inserted only when the selected store is empty
 - No Firestore, Storage, Secret Manager, auth, or external AI API integration yet
-- Returns fixed or in-memory dummy JSON for frontend-backend connectivity checks
 - `GET /pets`, `GET /closet/items`, `GET /saved-looks` support simple query filters
 - Dog-only backend for the current product scope
 - Breed data is currently a seed baseline list with one standard measurement per breed

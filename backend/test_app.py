@@ -1,21 +1,19 @@
-import copy
+import tempfile
 import unittest
 
 from backend.app import app
-from backend.seed_data import CLOSET_ITEMS, PETS, SAVED_LOOKS
+from backend.db import SQLiteStore
 
 
 class BackendApiTestCase(unittest.TestCase):
     def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.store = SQLiteStore(f"{self.temp_dir.name}/test_backend.db")
+        app.config["DATA_STORE"] = self.store
         self.client = app.test_client()
-        self._pets = copy.deepcopy(PETS)
-        self._closet_items = copy.deepcopy(CLOSET_ITEMS)
-        self._saved_looks = copy.deepcopy(SAVED_LOOKS)
 
     def tearDown(self):
-        PETS[:] = self._pets
-        CLOSET_ITEMS[:] = self._closet_items
-        SAVED_LOOKS[:] = self._saved_looks
+        self.temp_dir.cleanup()
 
     def test_health_returns_service_status(self):
         response = self.client.get("/health")
@@ -24,6 +22,7 @@ class BackendApiTestCase(unittest.TestCase):
         payload = response.get_json()
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["service"], "petfashion-backend")
+        self.assertEqual(payload["storageBackend"], "sqlite")
         self.assertIn("timestamp", payload)
 
     def test_root_returns_endpoint_index(self):
@@ -80,6 +79,47 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(item["neckGirthCm"], 21.5)
         self.assertEqual(item["neckGirth"], 21.5)
         self.assertEqual(item["imageUrl"], "/tmp/coco.png")
+
+    def test_created_pet_is_readable_from_following_request(self):
+        create_response = self.client.post(
+            "/pets",
+            json={
+                "petName": "Nana",
+                "breed": "Shiba Inu",
+                "weight": 9.2,
+            },
+        )
+
+        self.assertEqual(create_response.status_code, 201)
+        pet_id = create_response.get_json()["item"]["petId"]
+
+        fetch_response = self.client.get(f"/pets/{pet_id}")
+
+        self.assertEqual(fetch_response.status_code, 200)
+        item = fetch_response.get_json()["item"]
+        self.assertEqual(item["name"], "Nana")
+        self.assertEqual(item["breed"], "Shiba Inu")
+
+    def test_update_pet_overwrites_existing_fields(self):
+        response = self.client.put(
+            "/pets/pet_001",
+            json={
+                "petName": "Buddy Updated",
+                "breed": "Golden Retriever",
+                "weight": 30.1,
+                "neckGirth": 43,
+                "chestGirth": 69,
+                "backLength": 56,
+                "photoPath": "/tmp/buddy_updated.png",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        item = response.get_json()["item"]
+        self.assertEqual(item["petId"], "pet_001")
+        self.assertEqual(item["name"], "Buddy Updated")
+        self.assertEqual(item["imageUrl"], "/tmp/buddy_updated.png")
+        self.assertEqual(item["neckGirthCm"], 43)
 
     def test_list_closet_items_supports_season_filter(self):
         response = self.client.get("/closet/items?season=rainy")
@@ -138,9 +178,29 @@ class BackendApiTestCase(unittest.TestCase):
             json={"petId": "pet_001", "clothingId": "missing_item"},
         )
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
         payload = response.get_json()
         self.assertFalse(payload["ok"])
+
+    def test_tryon_demo_accepts_virtual_outfit_payload(self):
+        response = self.client.post(
+            "/tryon-demo",
+            json={
+                "petId": "pet_001",
+                "outfitName": "Prototype Hoodie",
+                "category": "Hoodie",
+                "color": "blue",
+                "size": "M",
+                "pattern": "check",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload["item"]["name"], "Prototype Hoodie")
+        self.assertEqual(payload["renderSpec"]["renderer"], "overlay-v1")
+        self.assertEqual(payload["renderSpec"]["garmentType"], "hoodie")
+        self.assertEqual(payload["renderSpec"]["patternStyle"], "check")
 
 
 if __name__ == "__main__":

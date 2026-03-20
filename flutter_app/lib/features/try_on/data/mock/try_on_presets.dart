@@ -1,0 +1,58 @@
+import '../../domain/try_on_preset.dart';
+
+const tryOnPresets = <TryOnPreset>[
+  TryOnPreset(
+    id: 'forest-knit',
+    name: 'Forest Knit Vest',
+    category: 'Knitwear',
+    color: 'Emerald',
+    pattern: 'solid',
+    description: 'Deep green knit vest for a clean everyday look.',
+    badge: 'GREEN',
+  ),
+  TryOnPreset(
+    id: 'royal-hoodie',
+    name: 'Royal Blue Hoodie',
+    category: 'Hoodie',
+    color: 'Blue',
+    pattern: 'solid',
+    description: 'Soft blue hoodie with a sporty streetwear feel.',
+    badge: 'BLUE',
+  ),
+  TryOnPreset(
+    id: 'sunny-rain',
+    name: 'Sunny Rain Coat',
+    category: 'Outerwear',
+    color: 'Yellow',
+    pattern: 'solid',
+    description: 'Bright yellow rain coat that pops in photos.',
+    badge: 'YELLOW',
+  ),
+  TryOnPreset(
+    id: 'ruby-stripe',
+    name: 'Ruby Stripe Sweater',
+    category: 'Knitwear',
+    color: 'Red',
+    pattern: 'stripe',
+    description: 'A warm red sweater with soft horizontal stripes.',
+    badge: 'RED',
+  ),
+  TryOnPreset(
+    id: 'mint-check',
+    name: 'Mint Check Coat',
+    category: 'Outerwear',
+    color: 'Teal',
+    pattern: 'check',
+    description: 'Patterned mint coat for a polished premium look.',
+    badge: 'CHECK',
+  ),
+  TryOnPreset(
+    id: 'navy-dots',
+    name: 'Navy Dot Tee',
+    category: 'Top',
+    color: 'Navy',
+    pattern: 'dots',
+    description: 'Playful dotted tee for casual photos and quick try-ons.',
+    badge: 'DOTS',
+  ),
+];
