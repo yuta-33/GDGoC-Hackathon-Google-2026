@@ -34,7 +34,7 @@ export function TryOnExperience() {
   const [currentPreview, setCurrentPreview] = useState<TryOnPreview | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [message, setMessage] = useState<string>(
-    "Swipe outfits, then run AI try-on."
+    "Swipe styles, then tap the button to generate."
   );
   const [cache, setCache] = useState<Record<string, TryOnPreview>>({});
 
@@ -113,80 +113,102 @@ export function TryOnExperience() {
 
   return (
     <div className="pageStack">
-      <section className="panel">
-        <div className="panelHeader">
-          <div>
-            <h1>Try-On</h1>
-            <p>Web version of the launch try-on flow.</p>
+      <section className="tryonStage">
+        <div className="tryonImageWrap">
+          {sourceImage ? (
+            <img src={sourceImage} alt="Try-on preview" className="tryonImage" />
+          ) : (
+            <div className="petPlaceholder large">Upload a pet photo first</div>
+          )}
+          <button className="floatingCircle left" type="button" aria-label="Back">
+            ←
+          </button>
+          <button className="floatingCircle right" type="button" aria-label="Share">
+            ↗
+          </button>
+          <div className="swipeBadge">SWIPE TO SELECT</div>
+          <div className="previewMessage">
+            <span>✦</span>
+            <strong>
+              {isGenerating
+                ? `Generating ${preset.name} with Vertex AI...`
+                : message}
+            </strong>
           </div>
-          <span className="pill">{selectedIndex + 1}/{outfitPresets.length}</span>
-        </div>
-
-        <div className="tryonHero">
-          <div className="tryonImageWrap">
-            {sourceImage ? (
-              <img src={sourceImage} alt="Try-on preview" className="tryonImage" />
-            ) : (
-              <div className="petPlaceholder large">Upload a pet photo first</div>
-            )}
-            {isGenerating ? (
-              <div className="tryonOverlay">
-                <div className="sparkleOrb" />
-                <img
-                  src={preset.thumbnailPath}
-                  alt={preset.name}
-                  className="overlayOutfitImage"
-                />
-                <strong>Fitting {preset.name}</strong>
-                <span>Vertex AI is generating the preview.</span>
-              </div>
-            ) : null}
-          </div>
-          <div className="tryonCopy">
-            <span className="pill">{preset.badge}</span>
-            <h2>{preset.name}</h2>
-            <p>{message}</p>
-            <button
-              className="primaryButton"
-              type="button"
-              onClick={() => runTryOn(preset)}
-              disabled={isGenerating}
-            >
-              {isGenerating ? "Generating..." : "Try This Outfit"}
-            </button>
-          </div>
+          <button className="favoriteFab" type="button" aria-label="Favorite">
+            ♡
+          </button>
+          {isGenerating ? (
+            <div className="tryonOverlay">
+              <div className="sparkleOrb" />
+              <img
+                src={preset.thumbnailPath}
+                alt={preset.name}
+                className="overlayOutfitImage"
+              />
+              <strong>Fitting {preset.name}</strong>
+              <span>Vertex AI is generating the preview.</span>
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <section className="panel">
-        <div className="panelHeader">
+      <section className="sectionBlock">
+        <div className="sectionTitleRow stacked">
           <div>
-            <h2>Outfit Lineup</h2>
-            <p>Swipe-style selection for hackathon visitors</p>
+            <h1>Swipe Left Or Right</h1>
+            <p>Change outfits instantly and preview them on your dog photo.</p>
           </div>
         </div>
 
-        <div className="outfitScroller">
+        <div className="mobileCarousel">
           {outfitPresets.map((item, index) => {
             const active = index === selectedIndex;
             return (
               <button
                 type="button"
                 key={item.id}
-                className={active ? "outfitCard active" : "outfitCard"}
+                className={active ? "styleCard active" : "styleCard"}
                 onClick={() => setSelectedIndex(index)}
               >
-                <img src={item.thumbnailPath} alt={item.name} className="outfitThumb" />
-                <div className="outfitText">
-                  <span className="pill">{item.badge}</span>
-                  <strong>{item.name}</strong>
-                  <span>{item.platform} • {item.category}</span>
-                  <span>{item.material}</span>
+                <div className="styleCardHeader">
+                  <span className="styleBadge">{item.badge}</span>
+                  <span className="styleHanger">⟟</span>
+                </div>
+                <div className="styleCardBody">
+                  <img src={item.thumbnailPath} alt={item.name} className="styleThumb" />
+                  <div className="styleText">
+                    <strong>{item.name}</strong>
+                    <p>{item.description}</p>
+                  </div>
+                </div>
+                <div className="styleMeta">
+                  <span>{item.platform}</span>
+                  <span>{item.category}</span>
+                  <span>{item.sizeRange.length} sizes</span>
                 </div>
               </button>
             );
           })}
         </div>
+
+        <div className="dotPager">
+          {outfitPresets.map((item, index) => (
+            <span
+              key={item.id}
+              className={index === selectedIndex ? "pagerDot active" : "pagerDot"}
+            />
+          ))}
+        </div>
+
+        <button
+          className="primaryButton fullButton"
+          type="button"
+          onClick={() => runTryOn(preset)}
+          disabled={isGenerating}
+        >
+          {isGenerating ? "Generating..." : "✦ Try This Outfit"}
+        </button>
       </section>
     </div>
   );

@@ -51,62 +51,91 @@ export function PetsForm() {
 
   return (
     <div className="pageStack">
-      <section className="panel">
-        <div className="panelHeader">
-          <div>
-            <h1>Pet Profile</h1>
-            <p>Save one dog profile locally for the web demo.</p>
-          </div>
-          {saved ? <span className="pill success">Saved</span> : null}
-        </div>
+      <section className="profileIntro">
+        <span>Step 1 of 2</span>
+        <h1>Tell us about your friend</h1>
+        <p>Provide accurate info for a perfect AI-powered fit.</p>
+      </section>
 
-        <div className="photoUploader">
+      <section className="petPhotoCard">
+        <div className="petPhotoBadge">
           {previewUrl ? (
-            <img src={previewUrl} alt="Pet preview" className="petPreview" />
+            <img src={previewUrl} alt="Pet preview" className="petPhotoBadgeImage" />
           ) : (
-            <div className="petPlaceholder">Add a dog photo</div>
+            <span>🐾</span>
           )}
-          <label className="secondaryButton uploadButton">
-            Upload Photo
-            <input type="file" accept="image/*" hidden onChange={onPhotoChange} />
-          </label>
         </div>
+        <label className="uploadLink">
+          Upload Pet Photo
+          <input type="file" accept="image/*" hidden onChange={onPhotoChange} />
+        </label>
+        <span className="supportCopy">
+          Works best with one clear dog photo facing the camera.
+        </span>
+        {saved ? <span className="pill success">Saved locally</span> : null}
+      </section>
 
-        <div className="formGrid">
-          <label>
-            <span>Pet Name</span>
-            <input
-              value={pet.name}
-              onChange={(event) => update("name", event.target.value)}
-              placeholder="Milo"
-            />
-          </label>
-          <label>
-            <span>Breed</span>
-            <input
-              value={pet.breed}
-              onChange={(event) => update("breed", event.target.value)}
-              placeholder="Jack Russell Terrier"
-            />
-          </label>
-          <label>
-            <span>Weight (kg)</span>
+      <section className="petFormCard">
+        <div className="petField">
+          <span>Pet Name</span>
+          <input
+            value={pet.name}
+            onChange={(event) => update("name", event.target.value)}
+            placeholder="Buddy"
+          />
+        </div>
+        <div className="petField">
+          <span>Breed</span>
+          <input
+            value={pet.breed}
+            onChange={(event) => update("breed", event.target.value)}
+            placeholder="Jack Russell Terrier"
+          />
+        </div>
+        <div className="weightRow">
+          <div className="petField">
+            <span>Weight</span>
             <input
               type="number"
               value={pet.weight || ""}
-              onChange={(event) =>
-                update("weight", Number(event.target.value || 0))
-              }
+              onChange={(event) => update("weight", Number(event.target.value || 0))}
+              placeholder="7.0"
             />
-          </label>
+          </div>
+          <div className="unitToggle" aria-label="Weight unit">
+            <button
+              type="button"
+              className={pet.weightUnit === "KG" ? "unitButton active" : "unitButton"}
+              onClick={() => update("weightUnit", "KG")}
+            >
+              KG
+            </button>
+            <button
+              type="button"
+              className={pet.weightUnit === "LB" ? "unitButton active" : "unitButton"}
+              onClick={() => update("weightUnit", "LB")}
+            >
+              LB
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="measurementCard">
+        <div className="measurementHeader">
+          <div>
+            <h2>Measurements</h2>
+            <p>Accurate measurements help us find the best fit.</p>
+          </div>
+          <span className="helpBubble">?</span>
+        </div>
+        <div className="formGrid">
           <label>
             <span>Neck Girth (cm)</span>
             <input
               type="number"
               value={pet.neckGirth || ""}
-              onChange={(event) =>
-                update("neckGirth", Number(event.target.value || 0))
-              }
+              onChange={(event) => update("neckGirth", Number(event.target.value || 0))}
             />
           </label>
           <label>
@@ -114,9 +143,7 @@ export function PetsForm() {
             <input
               type="number"
               value={pet.chestGirth || ""}
-              onChange={(event) =>
-                update("chestGirth", Number(event.target.value || 0))
-              }
+              onChange={(event) => update("chestGirth", Number(event.target.value || 0))}
             />
           </label>
           <label>
@@ -124,17 +151,15 @@ export function PetsForm() {
             <input
               type="number"
               value={pet.backLength || ""}
-              onChange={(event) =>
-                update("backLength", Number(event.target.value || 0))
-              }
+              onChange={(event) => update("backLength", Number(event.target.value || 0))}
             />
           </label>
         </div>
-
-        <button className="primaryButton" type="button" onClick={saveProfile}>
-          Save Profile
-        </button>
       </section>
+
+      <button className="primaryButton fullButton" type="button" onClick={saveProfile}>
+        Save Profile
+      </button>
     </div>
   );
 }

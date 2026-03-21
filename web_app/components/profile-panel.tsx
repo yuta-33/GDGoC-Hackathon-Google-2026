@@ -1,21 +1,63 @@
 export function ProfilePanel() {
   return (
     <div className="pageStack">
-      <section className="panel">
-        <div className="panelHeader">
-          <div>
-            <h1>Profile</h1>
-            <p>Web demo profile settings for the hackathon build.</p>
-          </div>
-          <span className="pill">Coming Soon</span>
+      <section className="profileHero">
+        <div className="profileAvatar">👤</div>
+        <div className="profileHeroCopy">
+          <strong>PetFit Member</strong>
+          <span>Set up your account details</span>
+          <div className="profilePill">Account Ready</div>
         </div>
-        <div className="comingSoonBox">
-          <h2>Account features are staged for later.</h2>
-          <p>
-            The launch web build prioritizes pet onboarding and AI outfit try-on.
-            Saved addresses, payments, and shopper profile details stay out of scope
-            for now.
-          </p>
+      </section>
+
+      <section className="statsCard">
+        <div>
+          <strong>12</strong>
+          <span>Orders</span>
+        </div>
+        <div>
+          <strong>28</strong>
+          <span>Favorites</span>
+        </div>
+        <div>
+          <strong>3</strong>
+          <span>Reviews</span>
+        </div>
+      </section>
+
+      <section className="menuCard">
+        <div className="menuTile">
+          <span className="menuIcon accent">👤</span>
+          <span>Edit Profile</span>
+          <em>Coming Soon</em>
+        </div>
+        <div className="menuTile">
+          <span className="menuIcon accent">⌂</span>
+          <span>Addresses</span>
+          <em>Coming Soon</em>
+        </div>
+        <div className="menuTile">
+          <span className="menuIcon accent">◫</span>
+          <span>Payment Methods</span>
+          <em>Coming Soon</em>
+        </div>
+        <div className="menuTile">
+          <span className="menuIcon accent">♡</span>
+          <span>Saved Looks</span>
+          <em>Coming Soon</em>
+        </div>
+      </section>
+
+      <section className="menuCard">
+        <div className="menuTile">
+          <span className="menuIcon">?</span>
+          <span>Help Center</span>
+          <em>Coming Soon</em>
+        </div>
+        <div className="menuTile">
+          <span className="menuIcon">⚙</span>
+          <span>Preferences</span>
+          <em>Coming Soon</em>
         </div>
       </section>
     </div>
