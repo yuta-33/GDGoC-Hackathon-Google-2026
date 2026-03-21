@@ -94,7 +94,7 @@ class ProfilePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Sarah Johnson',
+                        'PetFit Member',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -102,7 +102,7 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'sarah.j@email.com',
+                        'Set up your account details',
                         style: TextStyle(color: Colors.white70),
                       ),
                       SizedBox(height: 6),
@@ -117,7 +117,7 @@ class ProfilePage extends StatelessWidget {
                             vertical: 4,
                           ),
                           child: Text(
-                            'Premium Member ✨',
+                            'Account Ready',
                             style: TextStyle(color: Colors.white),
                           ),
                         ),

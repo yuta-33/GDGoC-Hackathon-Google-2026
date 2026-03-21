@@ -1,15 +1,13 @@
 import '../../../../core/models/pet_profile.dart';
 
-const defaultPetPhotoAssetPath = 'assets/images/demo_pet.png';
-
 const defaultPetProfile = PetProfile(
   id: '1',
-  name: 'Buddy',
-  breed: 'Golden Retriever',
-  weight: 28.5,
+  name: '',
+  breed: '',
+  weight: 0,
   weightUnit: 'KG',
-  neckGirth: 42,
-  chestGirth: 68,
-  backLength: 55,
-  photoPath: defaultPetPhotoAssetPath,
+  neckGirth: 0,
+  chestGirth: 0,
+  backLength: 0,
+  photoPath: null,
 );

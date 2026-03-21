@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,6 +26,7 @@ class PetProfilePage extends ConsumerStatefulWidget {
 
 class _PetProfilePageState extends ConsumerState<PetProfilePage> {
   static const _kgToLbFactor = 2.2046226218;
+  static const _bundledTestPhotoAsset = 'assets/images/demo_pet.png';
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -193,6 +195,17 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
     Navigator.pushReplacementNamed(context, AppRouter.home);
   }
 
+  Future<void> _resetProfile() async {
+    await ref.read(petProfileProvider.notifier).resetProfile();
+    if (!mounted) {
+      return;
+    }
+    _syncControllers(ref.read(petProfileProvider));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Local pet profile has been reset.')),
+    );
+  }
+
   void _showImageSourceSheet({required bool cameraAvailable}) {
     showModalBottomSheet<void>(
       context: context,
@@ -230,6 +243,26 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
                   onTap: () async {
                     Navigator.pop(context);
                     await _pickPetPhoto(ImageSource.gallery);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.folder_open_rounded),
+                  title: const Text('Choose from files'),
+                  subtitle: const Text('Pick a photo directly from files'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _pickPetPhotoFromFiles();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.science_outlined),
+                  title: const Text('Load test photo'),
+                  subtitle: const Text(
+                    'Use the bundled dog photo for simulator testing',
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _loadBundledTestPhoto();
                   },
                 ),
               ],
@@ -276,6 +309,73 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
       debugPrint('Pet photo pick failed: $error');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to pick pet photo.')),
+      );
+    }
+  }
+
+  Future<void> _pickPetPhotoFromFiles() async {
+    try {
+      const imageTypes = XTypeGroup(
+        label: 'images',
+        extensions: ['png', 'jpg', 'jpeg', 'heic', 'webp'],
+      );
+      final selectedFile = await openFile(acceptedTypeGroups: [imageTypes]);
+      if (selectedFile == null) {
+        return;
+      }
+
+      final savedPath = await ref
+          .read(petPhotoStorageServiceProvider)
+          .savePhoto(
+            sourceFile: File(selectedFile.path),
+            previousPhotoPath: _photoPath,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _photoPath = savedPath);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pet photo imported from files.')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      debugPrint('Pet photo import failed: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to import photo from files.')),
+      );
+    }
+  }
+
+  Future<void> _loadBundledTestPhoto() async {
+    try {
+      final savedPath = await ref
+          .read(petPhotoStorageServiceProvider)
+          .saveBundledPhoto(
+            assetPath: _bundledTestPhotoAsset,
+            previousPhotoPath: _photoPath,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _photoPath = savedPath);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bundled test photo loaded for try-on preview.'),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      debugPrint('Bundled test photo load failed: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load bundled test photo.')),
       );
     }
   }
@@ -331,7 +431,15 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
     final showSuggestions = _breedFocus.hasFocus && suggestions.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Set Up Pet Profile')),
+      appBar: AppBar(
+        title: const Text('Set Up Pet Profile'),
+        actions: [
+          TextButton(
+            onPressed: _isSaving ? null : _resetProfile,
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: PrimaryButton(
@@ -396,7 +504,7 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
               Text(
                 cameraAvailable
                     ? 'Photos are stored locally on this device first.'
-                    : 'Simulator cannot open the real camera. Import from gallery instead.',
+                    : 'Simulator cannot open the real camera. Import from gallery, files, or the bundled test photo instead.',
                 style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
@@ -405,7 +513,7 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Pet Name',
-                  hintText: 'e.g. Buddy',
+                  hintText: 'e.g. Milo',
                 ),
                 validator: (value) => (value == null || value.trim().isEmpty)
                     ? 'Pet name is required'
@@ -418,7 +526,7 @@ class _PetProfilePageState extends ConsumerState<PetProfilePage> {
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Breed',
-                  hintText: 'e.g. Golden Retriever',
+                  hintText: 'e.g. Jack Russell Terrier',
                   suffixIcon: Icon(Icons.search_rounded),
                 ),
                 validator: (value) => (value == null || value.trim().isEmpty)

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../core/config/api_config.dart';
 import '../../../core/models/pet_profile.dart';
@@ -18,6 +19,12 @@ class TryOnService {
     required PetProfile pet,
     required TryOnPreset preset,
   }) async {
+    final cacheKey = _cacheKeyFor(pet: pet, preset: preset);
+    final cachedPreview = await _readCachedPreview(cacheKey);
+    if (cachedPreview != null) {
+      return cachedPreview;
+    }
+
     final client = HttpClient();
     final imageBytes = await _loadPhotoBytes(pet.photoPath);
     final imageMimeType = _guessMimeType(pet.photoPath);
@@ -58,6 +65,7 @@ class TryOnService {
       }
 
       final payload = jsonDecode(body) as Map<String, dynamic>;
+      await _writeCachedPreview(cacheKey, payload);
       return TryOnPreview.fromJson(payload);
     } finally {
       client.close(force: true);
@@ -81,5 +89,48 @@ class TryOnService {
       return 'image/jpeg';
     }
     return 'image/png';
+  }
+
+  String _cacheKeyFor({required PetProfile pet, required TryOnPreset preset}) {
+    final seed = '${pet.id}|${pet.photoPath}|${preset.id}';
+    var hash = 17;
+    for (final unit in utf8.encode(seed)) {
+      hash = 37 * hash + unit;
+    }
+    return hash.abs().toString();
+  }
+
+  Future<TryOnPreview?> _readCachedPreview(String cacheKey) async {
+    final cacheFile = await _cacheFileFor(cacheKey);
+    if (!await cacheFile.exists()) {
+      return null;
+    }
+
+    try {
+      final payload = jsonDecode(await cacheFile.readAsString());
+      if (payload is! Map<String, dynamic>) {
+        return null;
+      }
+      return TryOnPreview.fromJson(payload);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _writeCachedPreview(
+    String cacheKey,
+    Map<String, dynamic> payload,
+  ) async {
+    final cacheFile = await _cacheFileFor(cacheKey);
+    await cacheFile.writeAsString(jsonEncode(payload), flush: true);
+  }
+
+  Future<File> _cacheFileFor(String cacheKey) async {
+    final baseDir = await getApplicationDocumentsDirectory();
+    final cacheDir = Directory('${baseDir.path}/tryon_cache');
+    if (!await cacheDir.exists()) {
+      await cacheDir.create(recursive: true);
+    }
+    return File('${cacheDir.path}/$cacheKey.json');
   }
 }

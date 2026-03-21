@@ -16,7 +16,7 @@ const mockNotifications = <AppNotification>[
   AppNotification(
     id: '2',
     title: 'New AI Recommendation',
-    message: 'We found 5 new items that are 95%+ match for Buddy',
+    message: 'We found 5 new items with a strong match for your pet profile',
     time: '5 hours ago',
     icon: Icons.auto_awesome,
     iconColor: Color(0xFF7C3AED),

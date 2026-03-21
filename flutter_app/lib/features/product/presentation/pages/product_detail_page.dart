@@ -168,7 +168,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                         const Padding(
                           padding: EdgeInsets.only(top: 8),
                           child: Text(
-                            '✓ AI recommends this size for Buddy',
+                            '✓ AI recommends this size for the saved pet profile',
                             style: TextStyle(
                               color: AppColors.primaryDark,
                               fontWeight: FontWeight.w600,

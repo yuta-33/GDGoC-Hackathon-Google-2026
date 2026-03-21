@@ -114,6 +114,8 @@ class PetsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final localPet = ref.watch(petProfileProvider);
     final petsAsync = ref.watch(petsProvider);
+    final hasLocalPet =
+        localPet.name.trim().isNotEmpty && localPet.breed.trim().isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -132,16 +134,50 @@ class PetsPage extends ConsumerWidget {
         loading: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildPetCard(context, localPet),
-            const SizedBox(height: 12),
+            if (hasLocalPet) ...[
+              _buildPetCard(context, localPet),
+              const SizedBox(height: 12),
+            ],
             const Center(child: CircularProgressIndicator()),
           ],
         ),
-        data: (backendPets) {
-          final pets = backendPets.isEmpty ? [localPet] : backendPets;
+        data: (_) {
+          final pets = hasLocalPet ? [localPet] : <PetProfile>[];
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (pets.isEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.pets_rounded, size: 48),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'No pets yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Set up your first pet profile and add a photo to start try-on.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: () => Navigator.pushNamed(
+                            context,
+                            AppRouter.petProfile,
+                          ),
+                          child: const Text('Create First Pet'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               for (var index = 0; index < pets.length; index++) ...[
                 _buildPetCard(context, pets[index]),
                 const SizedBox(height: 12),

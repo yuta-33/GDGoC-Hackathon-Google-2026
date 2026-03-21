@@ -12,6 +12,15 @@ try:
     from .seed_data import CLOSET_ITEMS, PETS, SAVED_LOOKS
 except ImportError:
     from seed_data import CLOSET_ITEMS, PETS, SAVED_LOOKS
+
+
+def _demo_seed_enabled(default=False):
+    value = os.environ.get("PETFASHION_ENABLE_DEMO_SEED")
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class BaseStore:
     store_name = "base"
 
@@ -423,6 +432,8 @@ class FirestoreStore(BaseStore):
         return self.client.collection(name)
 
     def _seed_if_empty(self):
+        if not _demo_seed_enabled(default=False):
+            return
         snapshot = list(self._collection("pets").limit(1).stream())
         if snapshot:
             return

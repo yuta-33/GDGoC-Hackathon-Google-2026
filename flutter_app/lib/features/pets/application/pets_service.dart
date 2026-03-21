@@ -5,14 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/api_config.dart';
 import '../../../core/models/pet_profile.dart';
-import '../../pet_profile/data/mock/mock_pet_data.dart';
+import '../../pet_profile/application/pet_profile_provider.dart';
 
 final petsServiceProvider = Provider<PetsService>((_) {
   return PetsService();
 });
 
-final petsProvider = FutureProvider<List<PetProfile>>((ref) {
-  return ref.read(petsServiceProvider).fetchPets();
+final petsProvider = FutureProvider<List<PetProfile>>((ref) async {
+  final localPet = ref.watch(petProfileProvider);
+  final hasLocalPet =
+      localPet.name.trim().isNotEmpty && localPet.breed.trim().isNotEmpty;
+  return hasLocalPet ? [localPet] : const [];
 });
 
 class PetsService {
@@ -97,7 +100,7 @@ class PetsService {
       neckGirth: (json['neckGirthCm'] as num?)?.toDouble() ?? 0,
       chestGirth: (json['chestGirthCm'] as num?)?.toDouble() ?? 0,
       backLength: (json['backLengthCm'] as num?)?.toDouble() ?? 0,
-      photoPath: json['imageUrl'] as String? ?? defaultPetPhotoAssetPath,
+      photoPath: json['imageUrl'] as String?,
     );
   }
 }

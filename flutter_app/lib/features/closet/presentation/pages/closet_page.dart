@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_tokens.dart';
+import '../../../../core/application/local_identity_service.dart';
 import '../../../../core/models/closet_item.dart';
 import '../../../../core/widgets/app_async_state_view.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/empty_state_view.dart';
 import '../../../pet_profile/application/pet_profile_provider.dart';
-import '../../../pets/application/pets_service.dart';
 import '../../../saved_looks/application/saved_looks_service.dart';
 import '../../application/closet_service.dart';
 
@@ -33,12 +33,7 @@ class _ClosetPageState extends ConsumerState<ClosetPage> {
     if (localPetId.startsWith('pet_')) {
       return localPetId;
     }
-
-    final pets = await ref.read(petsProvider.future);
-    if (pets.isEmpty) {
-      return null;
-    }
-    return pets.first.id;
+    return null;
   }
 
   Future<void> _saveLookFromItem(ClosetItem item) async {
@@ -109,6 +104,9 @@ class _ClosetPageState extends ConsumerState<ClosetPage> {
                 await ref
                     .read(closetServiceProvider)
                     .createClosetItem(
+                      ownerId: ref
+                          .read(localIdentityServiceProvider)
+                          .getOwnerId(),
                       name: nameController.text.trim(),
                       category: category,
                       color: colorController.text.trim(),

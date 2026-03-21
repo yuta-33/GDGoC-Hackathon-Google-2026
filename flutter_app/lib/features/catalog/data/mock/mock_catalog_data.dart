@@ -76,7 +76,8 @@ const mockProducts = <Product>[
         'https://images.unsplash.com/photo-1703721025121-26d64508482b?auto=format&fit=crop&w=1080&q=80',
     category: 'Formal',
     tags: ['featured'],
-    description: 'Tailored for Buddy\'s frame and golden coat',
+    description:
+        'Tailored fit with a polished silhouette for special occasions',
     sizes: ['S', 'M', 'L'],
     colors: ['Emerald', 'Navy', 'Burgundy'],
     matchPercentage: 98,

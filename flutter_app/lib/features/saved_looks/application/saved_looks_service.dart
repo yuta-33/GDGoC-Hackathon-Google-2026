@@ -5,13 +5,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/api_config.dart';
 import '../../../core/models/saved_look.dart';
+import '../../pet_profile/application/pet_profile_provider.dart';
 
 final savedLooksServiceProvider = Provider<SavedLooksService>((_) {
   return SavedLooksService();
 });
 
-final savedLooksProvider = FutureProvider<List<SavedLook>>((ref) {
-  return ref.read(savedLooksServiceProvider).fetchSavedLooks();
+final savedLooksProvider = FutureProvider<List<SavedLook>>((ref) async {
+  final pet = ref.watch(petProfileProvider);
+  if (!pet.id.startsWith('pet_')) {
+    return const [];
+  }
+  return ref.read(savedLooksServiceProvider).fetchSavedLooks(petId: pet.id);
 });
 
 class SavedLooksService {

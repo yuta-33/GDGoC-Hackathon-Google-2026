@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -35,6 +36,28 @@ class PetPhotoStorageService {
     }
 
     return copiedFile.path;
+  }
+
+  Future<String> saveBundledPhoto({
+    required String assetPath,
+    String? previousPhotoPath,
+  }) async {
+    final photoDir = await ensurePhotoDirectory();
+    final extension = _fileExtension(assetPath);
+    final targetPath =
+        '${photoDir.path}/pet_${DateTime.now().millisecondsSinceEpoch}$extension';
+    final byteData = await rootBundle.load(assetPath);
+    final file = File(targetPath);
+    await file.writeAsBytes(byteData.buffer.asUint8List());
+
+    if (previousPhotoPath != null && previousPhotoPath != file.path) {
+      final previousFile = File(previousPhotoPath);
+      if (await previousFile.exists()) {
+        await previousFile.delete();
+      }
+    }
+
+    return file.path;
   }
 
   String _fileExtension(String path) {

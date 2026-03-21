@@ -5,18 +5,23 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_tokens.dart';
 import '../../../../core/models/tryon_preview.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class PetTryOnPreview extends StatelessWidget {
   const PetTryOnPreview({
     required this.photoPath,
     required this.preview,
     this.isLoading = false,
+    this.loadingLabel,
+    this.outfitThumbnailUrl,
     super.key,
   });
 
   final String? photoPath;
   final TryOnPreview? preview;
   final bool isLoading;
+  final String? loadingLabel;
+  final String? outfitThumbnailUrl;
 
   Color _parseColor(String hex, [double opacity = 1]) {
     final normalized = hex.replaceFirst('#', '');
@@ -83,9 +88,178 @@ class PetTryOnPreview extends StatelessWidget {
                   ),
                 ),
               ),
-            if (previewData == null && isLoading)
-              const Center(child: CircularProgressIndicator()),
+            if (isLoading)
+              _GeneratingOverlay(
+                label: loadingLabel ?? 'Generating try-on preview',
+                outfitThumbnailUrl: outfitThumbnailUrl,
+              ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GeneratingOverlay extends StatefulWidget {
+  const _GeneratingOverlay({required this.label, this.outfitThumbnailUrl});
+
+  final String label;
+  final String? outfitThumbnailUrl;
+
+  @override
+  State<_GeneratingOverlay> createState() => _GeneratingOverlayState();
+}
+
+class _GeneratingOverlayState extends State<_GeneratingOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.black.withValues(alpha: 0.18),
+              Colors.black.withValues(alpha: 0.34),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final wave = math.sin(_controller.value * math.pi * 2);
+            final pulse = 1 + (wave * 0.05);
+            final sparkleOpacity = 0.5 + ((wave + 1) * 0.2);
+
+            return Center(
+              child: Transform.scale(
+                scale: pulse,
+                child: Container(
+                  width: 270,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.16),
+                        blurRadius: 28,
+                        offset: const Offset(0, 18),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 88,
+                            height: 88,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(
+                                0xFFCCFBF1,
+                              ).withValues(alpha: 0.8),
+                            ),
+                          ),
+                          Positioned(
+                            top: 6,
+                            left: 10,
+                            child: Opacity(
+                              opacity: sparkleOpacity,
+                              child: const Icon(
+                                Icons.auto_awesome_rounded,
+                                color: Color(0xFF14B8A6),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 12,
+                            bottom: 10,
+                            child: Opacity(
+                              opacity: sparkleOpacity,
+                              child: const Icon(
+                                Icons.auto_awesome_rounded,
+                                color: Color(0xFF14B8A6),
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.pets_rounded,
+                            size: 42,
+                            color: AppColors.primaryDark,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (widget.outfitThumbnailUrl != null) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child:
+                              widget.outfitThumbnailUrl!.startsWith('assets/')
+                              ? Image.asset(
+                                  widget.outfitThumbnailUrl!,
+                                  width: 104,
+                                  height: 104,
+                                  fit: BoxFit.cover,
+                                )
+                              : AppNetworkImage(
+                                  imageUrl: widget.outfitThumbnailUrl!,
+                                  width: 104,
+                                  height: 104,
+                                ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+                      Text(
+                        widget.label,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Vertex AI is fitting the selected outfit. Cached looks will reopen faster next time.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 14),
+                      const SizedBox(
+                        width: 26,
+                        height: 26,
+                        child: CircularProgressIndicator(strokeWidth: 2.8),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

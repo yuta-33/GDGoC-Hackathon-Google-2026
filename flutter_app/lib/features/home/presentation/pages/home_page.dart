@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/empty_state_view.dart';
 import '../../../catalog/application/catalog_providers.dart';
 import '../../../catalog/presentation/widgets/product_grid_card.dart';
+import '../../../pet_profile/application/pet_profile_provider.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -59,6 +60,8 @@ class HomePage extends ConsumerWidget {
     final filtered = ref.watch(homeProductsProvider);
     final featured = ref.watch(featuredProductProvider);
     final tab = ref.watch(homeTabProvider);
+    final pet = ref.watch(petProfileProvider);
+    final hasPetName = pet.name.trim().isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -88,14 +91,16 @@ class HomePage extends ConsumerWidget {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              const Expanded(
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Good morning'),
+                                    const Text('Good morning'),
                                     Text(
-                                      'Buddy & Sarah',
-                                      style: TextStyle(
+                                      hasPetName
+                                          ? '${pet.name} & family'
+                                          : 'Welcome to PetFit',
+                                      style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.textPrimary,
@@ -235,9 +240,13 @@ class HomePage extends ConsumerWidget {
                                       ),
                                     ),
                                     const SizedBox(height: 4),
-                                    const Text(
-                                      'Tailored for Buddy\'s frame and coat',
-                                      style: TextStyle(color: Colors.white70),
+                                    Text(
+                                      hasPetName
+                                          ? 'Tailored for ${pet.name}\'s size and coat'
+                                          : 'AI-picked style based on your saved pet profile',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                      ),
                                     ),
                                     const SizedBox(height: 12),
                                     FilledButton(

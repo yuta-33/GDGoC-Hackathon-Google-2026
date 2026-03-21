@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/application/local_identity_service.dart';
 import '../../../core/config/api_config.dart';
 import '../../../core/models/closet_item.dart';
 
@@ -11,16 +12,23 @@ final closetServiceProvider = Provider<ClosetService>((_) {
 });
 
 final closetItemsProvider = FutureProvider<List<ClosetItem>>((ref) {
-  return ref.read(closetServiceProvider).fetchClosetItems();
+  return ref
+      .read(closetServiceProvider)
+      .fetchClosetItems(
+        ownerId: ref.read(localIdentityServiceProvider).getOwnerId(),
+      );
 });
 
 class ClosetService {
-  Future<List<ClosetItem>> fetchClosetItems() async {
+  Future<List<ClosetItem>> fetchClosetItems({
+    required Future<String> ownerId,
+  }) async {
     final client = HttpClient();
 
     try {
+      final resolvedOwnerId = await ownerId;
       final request = await client.getUrl(
-        Uri.parse('$kApiBaseUrl/closet/items?ownerId=demo_user'),
+        Uri.parse('$kApiBaseUrl/closet/items?ownerId=$resolvedOwnerId'),
       );
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
@@ -43,6 +51,7 @@ class ClosetService {
   }
 
   Future<ClosetItem> createClosetItem({
+    required Future<String> ownerId,
     required String name,
     required String category,
     required String color,
@@ -53,13 +62,14 @@ class ClosetService {
     final client = HttpClient();
 
     try {
+      final resolvedOwnerId = await ownerId;
       final request = await client.postUrl(
         Uri.parse('$kApiBaseUrl/closet/items'),
       );
       request.headers.contentType = ContentType.json;
       request.write(
         jsonEncode({
-          'ownerId': 'demo_user',
+          'ownerId': resolvedOwnerId,
           'name': name,
           'category': category,
           'color': color,

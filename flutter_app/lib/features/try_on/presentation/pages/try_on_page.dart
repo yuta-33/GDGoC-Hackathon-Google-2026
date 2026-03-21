@@ -6,6 +6,7 @@ import '../../../../app/theme/app_tokens.dart';
 import '../../../../core/models/pet_profile.dart';
 import '../../../../core/models/tryon_preview.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../../../pet_profile/application/pet_profile_provider.dart';
 import '../../application/tryon_service.dart';
 import '../../data/mock/try_on_presets.dart';
@@ -82,6 +83,10 @@ class _TryOnPageState extends ConsumerState<TryOnPage> {
     return '${pet.id}|${pet.photoPath}|${preset.id}';
   }
 
+  bool _hasCachedPreview(PetProfile pet, TryOnPreset preset) {
+    return _previewCache.containsKey(_previewKeyFor(pet, preset));
+  }
+
   Future<void> _applyPreset(PetProfile pet, TryOnPreset preset) async {
     final messenger = ScaffoldMessenger.of(context);
     final previewKey = _previewKeyFor(pet, preset);
@@ -144,6 +149,8 @@ class _TryOnPageState extends ConsumerState<TryOnPage> {
                   photoPath: pet.photoPath,
                   preview: _currentPreview,
                   isLoading: _isGenerating,
+                  loadingLabel: 'Fitting ${preset.name}...',
+                  outfitThumbnailUrl: preset.thumbnailUrl,
                 ),
                 Positioned(
                   left: 12,
@@ -273,7 +280,7 @@ class _TryOnPageState extends ConsumerState<TryOnPage> {
                   ),
                   const SizedBox(height: 18),
                   SizedBox(
-                    height: 214,
+                    height: 320,
                     child: PageView.builder(
                       controller: _pageController,
                       itemCount: tryOnPresets.length,
@@ -347,14 +354,22 @@ class _TryOnPageState extends ConsumerState<TryOnPage> {
                                         }, color: Colors.white),
                                       ],
                                     ),
-                                    const Spacer(),
+                                    const SizedBox(height: 14),
+                                    _OutfitThumbnailCard(
+                                      preset: outfit,
+                                      backgroundColor: Colors.white,
+                                      compact: true,
+                                    ),
+                                    const SizedBox(height: 14),
                                     Text(
                                       outfit.name,
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 24,
+                                        fontSize: 22,
                                         fontWeight: FontWeight.w800,
                                       ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
@@ -364,14 +379,20 @@ class _TryOnPageState extends ConsumerState<TryOnPage> {
                                         fontSize: 15,
                                         height: 1.35,
                                       ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 12),
                                     Wrap(
                                       spacing: 8,
                                       runSpacing: 8,
                                       children: [
+                                        _MetaChip(label: outfit.platform),
                                         _MetaChip(label: outfit.category),
-                                        _MetaChip(label: outfit.pattern),
+                                        _MetaChip(
+                                          label:
+                                              '${outfit.sizeRange.length} sizes',
+                                        ),
                                       ],
                                     ),
                                   ],
@@ -444,20 +465,65 @@ class _TryOnPageState extends ConsumerState<TryOnPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '${preset.color} • ${preset.pattern} • ${preset.category}',
+                          '${preset.platform} • ${preset.color} • ${preset.category}',
                           style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          preset.description,
-                          style: const TextStyle(color: AppColors.textPrimary),
+                        const SizedBox(height: 14),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _OutfitThumbnailCard(preset: preset),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    preset.description,
+                                    style: const TextStyle(
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Material: ${preset.material}',
+                                    style: const TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Thickness: ${preset.thickness} • Stretch: ${preset.elasticity}',
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final size in preset.sizeRange.take(5))
+                              Chip(
+                                label: Text(size),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         Text(
-                          isSelectedPresetApplied
+                          _hasCachedPreview(pet, preset)
+                              ? 'This look is cached on device and will reopen faster.'
+                              : isSelectedPresetApplied
                               ? 'This look is already generated.'
                               : 'Tap the button below to generate this look.',
                           style: const TextStyle(
@@ -516,5 +582,92 @@ class _MetaChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _OutfitThumbnailCard extends StatelessWidget {
+  const _OutfitThumbnailCard({
+    required this.preset,
+    this.backgroundColor,
+    this.compact = false,
+  });
+
+  final TryOnPreset preset;
+  final Color? backgroundColor;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final cardSize = compact ? 76.0 : 96.0;
+    final card = Container(
+      width: cardSize,
+      height: cardSize,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: preset.thumbnailUrl == null
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.98),
+                    Colors.white.withValues(alpha: 0.74),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      switch (preset.category) {
+                        'Outerwear' => Icons.umbrella_rounded,
+                        'Hoodie' => Icons.checkroom_rounded,
+                        'Vest' => Icons.style_rounded,
+                        'Dress' => Icons.auto_awesome_mosaic_rounded,
+                        _ => Icons.checkroom_rounded,
+                      },
+                      color: AppColors.primaryDark,
+                      size: compact ? 24 : 28,
+                    ),
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        preset.color,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: compact ? 11 : 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : preset.thumbnailUrl!.startsWith('assets/')
+          ? Image.asset(
+              preset.thumbnailUrl!,
+              width: cardSize,
+              height: cardSize,
+              fit: BoxFit.cover,
+            )
+          : AppNetworkImage(
+              imageUrl: preset.thumbnailUrl!,
+              width: cardSize,
+              height: cardSize,
+            ),
+    );
+
+    if (backgroundColor != null) {
+      return ClipRRect(borderRadius: BorderRadius.circular(18), child: card);
+    }
+    return card;
   }
 }
