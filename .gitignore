@@ -9,3 +9,6 @@ backend/petfashion.db-wal
 IMG_2129.JPG
 IMG_2129.png
 vertex_tryon_*.png
+web_app/.next/
+web_app/node_modules/
+web_app/.vercel/

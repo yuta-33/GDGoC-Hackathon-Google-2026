@@ -1,0 +1,389 @@
+:root {
+  color-scheme: light;
+  --bg: #f7fbfb;
+  --surface: #ffffff;
+  --surface-soft: #ecfeff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: #d9f2ef;
+  --primary: #14b8a6;
+  --primary-dark: #0f766e;
+  --accent: #0ea5e9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(circle at top, #dffaf4 0%, var(--bg) 42%);
+  color: var(--text);
+  font-family:
+    "Avenir Next",
+    "Helvetica Neue",
+    sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.siteShell {
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+.siteMain {
+  width: min(1080px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 24px 0 32px;
+}
+
+.pageStack {
+  display: grid;
+  gap: 20px;
+}
+
+.panel,
+.heroCard {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(217, 242, 239, 0.9);
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: 0 18px 42px rgba(15, 118, 110, 0.08);
+}
+
+.heroCard {
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.95), rgba(14, 165, 233, 0.92));
+  color: white;
+}
+
+.heroCard p,
+.heroCard a {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.heroBadge,
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(20, 184, 166, 0.12);
+  color: var(--primary-dark);
+}
+
+.heroCard .heroBadge {
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+}
+
+.pill.success {
+  background: rgba(16, 185, 129, 0.16);
+  color: #047857;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.panelHeader h1,
+.panelHeader h2,
+.heroCard h1,
+.featuredCopy h3 {
+  margin: 0;
+}
+
+.panelHeader p,
+.heroCard p,
+.featuredCopy p,
+.muted {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.heroCard .heroActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.primaryButton,
+.secondaryButton,
+.outfitCard {
+  border: 0;
+  cursor: pointer;
+}
+
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, var(--primary), #22c55e);
+  color: white;
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  background: #ecfeff;
+  color: var(--primary-dark);
+  border: 1px solid #bff2eb;
+}
+
+.featuredRow,
+.tryonHero {
+  display: grid;
+  gap: 18px;
+  align-items: center;
+}
+
+.featuredRow {
+  grid-template-columns: 220px 1fr;
+}
+
+.featuredImage,
+.tryonImage,
+.petPreview,
+.outfitThumb,
+.overlayOutfitImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.featuredImage {
+  border-radius: 22px;
+  aspect-ratio: 1 / 1;
+}
+
+.formGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 20px;
+}
+
+.formGrid label {
+  display: grid;
+  gap: 8px;
+}
+
+.formGrid input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #cfeeea;
+  background: white;
+}
+
+.photoUploader {
+  display: grid;
+  gap: 14px;
+}
+
+.petPreview,
+.petPlaceholder {
+  border-radius: 24px;
+  background: #f8fafc;
+}
+
+.petPreview {
+  max-height: 420px;
+}
+
+.petPlaceholder {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  color: var(--muted);
+  border: 1px dashed #cfeeea;
+}
+
+.petPlaceholder.large {
+  min-height: 420px;
+}
+
+.uploadButton {
+  width: fit-content;
+}
+
+.tryonHero {
+  grid-template-columns: 1.1fr 0.9fr;
+}
+
+.tryonImageWrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  min-height: 420px;
+  background: #f8fafc;
+}
+
+.tryonImage {
+  min-height: 420px;
+}
+
+.tryonCopy {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.tryonOverlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  justify-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.38);
+  color: white;
+  text-align: center;
+}
+
+.sparkleOrb {
+  width: 110px;
+  height: 110px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(20,184,166,0.75) 38%, rgba(20,184,166,0.08) 68%);
+  animation: pulse 1.8s infinite ease-in-out;
+}
+
+.overlayOutfitImage {
+  width: 110px;
+  height: 110px;
+  border-radius: 24px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+}
+
+.outfitScroller {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.outfitCard {
+  display: grid;
+  gap: 12px;
+  text-align: left;
+  padding: 14px;
+  border-radius: 24px;
+  background: #f8fafc;
+  border: 1px solid #def7f4;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.outfitCard.active {
+  transform: translateY(-2px);
+  border-color: rgba(20, 184, 166, 0.55);
+  box-shadow: 0 16px 30px rgba(20, 184, 166, 0.12);
+}
+
+.outfitThumb {
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  background: white;
+}
+
+.outfitText {
+  display: grid;
+  gap: 8px;
+}
+
+.outfitText strong {
+  font-size: 18px;
+}
+
+.outfitText span:last-child {
+  color: var(--muted);
+}
+
+.bottomNav {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  width: min(560px, calc(100vw - 24px));
+  padding: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.navItem {
+  flex: 1;
+  text-align: center;
+  padding: 12px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.navItem.active {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.18), rgba(14, 165, 233, 0.18));
+  color: var(--primary-dark);
+}
+
+.comingSoonBox {
+  border-radius: 24px;
+  padding: 22px;
+  background: #f8fafc;
+  border: 1px solid #def7f4;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(0.94);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@media (max-width: 860px) {
+  .featuredRow,
+  .tryonHero,
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
