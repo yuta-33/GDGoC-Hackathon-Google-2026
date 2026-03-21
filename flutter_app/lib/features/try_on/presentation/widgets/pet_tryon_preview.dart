@@ -59,43 +59,66 @@ class PetTryOnPreview extends StatelessWidget {
     }
 
     final previewData = preview;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: SizedBox(
-        height: 390,
-        width: double.infinity,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (previewData?.generatedImageBytes != null)
-              Image.memory(previewData!.generatedImageBytes!, fit: BoxFit.cover)
-            else if (photoPath!.startsWith('assets/'))
-              Image.asset(photoPath!, fit: BoxFit.cover)
-            else
-              Image.file(File(photoPath!), fit: BoxFit.cover),
-            Container(color: Colors.black.withValues(alpha: 0.08)),
-            if (previewData != null && previewData.generatedImageBytes == null)
-              CustomPaint(
-                painter: _GarmentOverlayPainter(
-                  preview: previewData,
-                  primaryColor: _parseColor(
-                    previewData.primaryColor,
-                    previewData.opacity,
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final targetWidth = (constraints.maxWidth * pixelRatio).round();
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: SizedBox(
+            height: 390,
+            width: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (previewData?.generatedImageBytes != null)
+                  Image.memory(
+                    previewData!.generatedImageBytes!,
+                    fit: BoxFit.cover,
+                    cacheWidth: targetWidth,
+                    filterQuality: FilterQuality.medium,
+                  )
+                else if (photoPath!.startsWith('assets/'))
+                  Image.asset(
+                    photoPath!,
+                    fit: BoxFit.cover,
+                    cacheWidth: targetWidth,
+                    filterQuality: FilterQuality.medium,
+                  )
+                else
+                  Image.file(
+                    File(photoPath!),
+                    fit: BoxFit.cover,
+                    cacheWidth: targetWidth,
+                    filterQuality: FilterQuality.medium,
                   ),
-                  accentColor: _parseColor(
-                    previewData.accentColor,
-                    math.min(1, previewData.opacity + 0.08),
+                Container(color: Colors.black.withValues(alpha: 0.08)),
+                if (previewData != null && previewData.generatedImageBytes == null)
+                  CustomPaint(
+                    painter: _GarmentOverlayPainter(
+                      preview: previewData,
+                      primaryColor: _parseColor(
+                        previewData.primaryColor,
+                        previewData.opacity,
+                      ),
+                      accentColor: _parseColor(
+                        previewData.accentColor,
+                        math.min(1, previewData.opacity + 0.08),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            if (isLoading)
-              _GeneratingOverlay(
-                label: loadingLabel ?? 'Generating try-on preview',
-                outfitThumbnailUrl: outfitThumbnailUrl,
-              ),
-          ],
-        ),
-      ),
+                if (isLoading)
+                  _GeneratingOverlay(
+                    label: loadingLabel ?? 'Generating try-on preview',
+                    outfitThumbnailUrl: outfitThumbnailUrl,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -224,6 +247,8 @@ class _GeneratingOverlayState extends State<_GeneratingOverlay>
                                   width: 104,
                                   height: 104,
                                   fit: BoxFit.cover,
+                                  cacheWidth: 208,
+                                  filterQuality: FilterQuality.medium,
                                 )
                               : AppNetworkImage(
                                   imageUrl: widget.outfitThumbnailUrl!,

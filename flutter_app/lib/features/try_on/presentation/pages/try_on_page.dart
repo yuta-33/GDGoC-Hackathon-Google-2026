@@ -657,6 +657,8 @@ class _OutfitThumbnailCard extends StatelessWidget {
               width: cardSize,
               height: cardSize,
               fit: BoxFit.cover,
+              cacheWidth: (cardSize * 2).round(),
+              filterQuality: FilterQuality.medium,
             )
           : AppNetworkImage(
               imageUrl: preset.thumbnailUrl!,
