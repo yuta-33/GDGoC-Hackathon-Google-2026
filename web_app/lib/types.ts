@@ -24,6 +24,7 @@ export type OutfitPreset = {
   name: string;
   category: string;
   color: string;
+  pattern: string;
   badge: string;
   description: string;
   platform: string;

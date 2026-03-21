@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 
-from backend.app import app
+from backend.app import _build_tryon_vertex_prompt, app
 from backend.db import SQLiteStore
 
 
@@ -201,6 +201,96 @@ class BackendApiTestCase(unittest.TestCase):
         self.assertEqual(payload["renderSpec"]["renderer"], "overlay-v1")
         self.assertEqual(payload["renderSpec"]["garmentType"], "hoodie")
         self.assertEqual(payload["renderSpec"]["patternStyle"], "check")
+
+    def test_tryon_prompt_mentions_panda_details(self):
+        prompt = _build_tryon_vertex_prompt(
+            {
+                "clothingId": "virtual_001",
+                "presetId": "moncheri-panda-parka",
+                "name": "Panda Parka",
+                "category": "Hoodie",
+                "color": "Mocha",
+                "brand": "moncheri",
+                "description": "Soft panda-inspired parka",
+                "hasReferenceImage": True,
+            },
+            {"breed": "Jack Russell Terrier"},
+        )
+
+        self.assertIn("second image as the clothing reference", prompt)
+        self.assertIn("panda ear details on the hood", prompt)
+        self.assertIn("small rounded panda tail patch", prompt)
+
+    def test_tryon_prompt_mentions_security_back_print(self):
+        prompt = _build_tryon_vertex_prompt(
+            {
+                "clothingId": "virtual_002",
+                "presetId": "amazon-security-hoodie",
+                "name": "Security Hoodie",
+                "category": "Hoodie",
+                "color": "Red",
+                "brand": "Amazon",
+                "description": "Playful red hoodie with a bold back print",
+                "hasReferenceImage": False,
+            },
+            {"breed": "Jack Russell Terrier"},
+        )
+
+        self.assertIn("SECURITY print visible across the back panel", prompt)
+
+    def test_tryon_prompt_mentions_carrot_details(self):
+        prompt = _build_tryon_vertex_prompt(
+            {
+                "clothingId": "virtual_003",
+                "presetId": "amazon-carrot-vest",
+                "name": "Carrot Vest",
+                "category": "Vest",
+                "color": "Orange",
+                "brand": "Amazon",
+                "description": "Warm carrot-themed fleece vest",
+                "hasReferenceImage": True,
+            },
+            {"breed": "Jack Russell Terrier"},
+        )
+
+        self.assertIn("green carrot-leaf collar detail", prompt)
+        self.assertIn("stitched yellow carrot-cut accents", prompt)
+
+    def test_tryon_prompt_mentions_ribbon_details(self):
+        prompt = _build_tryon_vertex_prompt(
+            {
+                "clothingId": "virtual_004",
+                "presetId": "moncheri-ribbon-dress",
+                "name": "Ribbon Dress",
+                "category": "Dress",
+                "color": "Beige",
+                "brand": "moncheri",
+                "description": "A soft ribbon-pattern dress with a large back bow",
+                "hasReferenceImage": True,
+            },
+            {"breed": "Jack Russell Terrier"},
+        )
+
+        self.assertIn("oversized back bow", prompt)
+        self.assertIn("tiny embroidered ribbon pattern", prompt)
+
+    def test_tryon_prompt_mentions_raincoat_details(self):
+        prompt = _build_tryon_vertex_prompt(
+            {
+                "clothingId": "virtual_005",
+                "presetId": "amazon-raincoat",
+                "name": "Reflective Rain Coat",
+                "category": "Outerwear",
+                "color": "Black",
+                "brand": "Amazon",
+                "description": "Lightweight rain coat with reflective sleeve accents",
+                "hasReferenceImage": True,
+            },
+            {"breed": "Jack Russell Terrier"},
+        )
+
+        self.assertIn("reflective silver sleeve stripes", prompt)
+        self.assertIn("black lightweight outer shell", prompt)
 
 
 if __name__ == "__main__":

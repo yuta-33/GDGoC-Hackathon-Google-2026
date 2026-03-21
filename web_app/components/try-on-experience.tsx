@@ -28,6 +28,24 @@ function dataUrlToMimeType(dataUrl?: string) {
   return match?.[1] ?? "image/png";
 }
 
+async function loadOutfitReferenceData(path: string) {
+  const response = await fetch(path);
+  if (!response.ok) {
+    throw new Error(`Outfit reference fetch failed: ${response.status}`);
+  }
+  const blob = await response.blob();
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return {
+    base64: btoa(binary),
+    mimeType: blob.type || "image/png"
+  };
+}
+
 export function TryOnExperience() {
   const [pet, setPet] = useState<PetProfile>(emptyPet);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -73,6 +91,9 @@ export function TryOnExperience() {
     setIsGenerating(true);
     setMessage(`Generating ${selectedPreset.name} with Vertex AI...`);
     try {
+      const outfitReference = await loadOutfitReferenceData(
+        selectedPreset.thumbnailPath
+      );
       const response = await fetch("/api/tryon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,12 +107,18 @@ export function TryOnExperience() {
           backLength: pet.backLength,
           imageBase64: dataUrlToBase64(pet.photoDataUrl),
           imageMimeType: dataUrlToMimeType(pet.photoDataUrl),
+          outfitId: selectedPreset.id,
           outfitName: selectedPreset.name,
           category: selectedPreset.category,
           color: selectedPreset.color,
-          pattern: "solid",
+          pattern: selectedPreset.pattern,
           brand: selectedPreset.platform,
-          size: selectedPreset.sizeRange[0] ?? "M"
+          description: selectedPreset.description,
+          material: selectedPreset.material,
+          sourceUrl: selectedPreset.sourceUrl,
+          size: selectedPreset.sizeRange[0] ?? "M",
+          outfitReferenceImageBase64: outfitReference.base64,
+          outfitReferenceImageMimeType: outfitReference.mimeType
         })
       });
 

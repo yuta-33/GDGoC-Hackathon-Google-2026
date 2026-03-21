@@ -15,6 +15,8 @@ final tryOnServiceProvider = Provider<TryOnService>((_) {
 });
 
 class TryOnService {
+  static const _cacheVersion = 'v2';
+
   Future<TryOnPreview> generatePreview({
     required PetProfile pet,
     required TryOnPreset preset,
@@ -28,6 +30,8 @@ class TryOnService {
     final client = HttpClient();
     final imageBytes = await _loadPhotoBytes(pet.photoPath);
     final imageMimeType = _guessMimeType(pet.photoPath);
+    final outfitReferenceBytes = await _loadPhotoBytes(preset.thumbnailUrl);
+    final outfitReferenceMimeType = _guessMimeType(preset.thumbnailUrl);
 
     try {
       final request = await client.postUrl(
@@ -46,12 +50,20 @@ class TryOnService {
           'photoPath': pet.photoPath,
           'imageBase64': imageBytes == null ? null : base64Encode(imageBytes),
           'imageMimeType': imageMimeType,
+          'outfitId': preset.id,
           'outfitName': preset.name,
           'category': preset.category,
           'color': preset.color,
           'pattern': preset.pattern,
-          'brand': 'PetFit AI',
+          'brand': preset.platform,
+          'description': preset.description,
+          'material': preset.material,
+          'sourceUrl': preset.sourceUrl,
           'size': 'M',
+          'outfitReferenceImageBase64': outfitReferenceBytes == null
+              ? null
+              : base64Encode(outfitReferenceBytes),
+          'outfitReferenceImageMimeType': outfitReferenceMimeType,
         }),
       );
 
@@ -92,7 +104,7 @@ class TryOnService {
   }
 
   String _cacheKeyFor({required PetProfile pet, required TryOnPreset preset}) {
-    final seed = '${pet.id}|${pet.photoPath}|${preset.id}';
+    final seed = '$_cacheVersion|${pet.id}|${pet.photoPath}|${preset.id}';
     var hash = 17;
     for (final unit in utf8.encode(seed)) {
       hash = 37 * hash + unit;

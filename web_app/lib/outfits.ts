@@ -6,6 +6,7 @@ export const outfitPresets: OutfitPreset[] = [
     name: "Reflective Rain Coat",
     category: "Outerwear",
     color: "Black",
+    pattern: "solid",
     badge: "RAIN",
     description:
       "Lightweight rain coat with reflective sleeve accents for outdoor walks.",
@@ -23,6 +24,7 @@ export const outfitPresets: OutfitPreset[] = [
     name: "Security Hoodie",
     category: "Hoodie",
     color: "Red",
+    pattern: "solid",
     badge: "RED",
     description:
       "Playful red hoodie with a bold back print and relaxed casual shape.",
@@ -40,6 +42,7 @@ export const outfitPresets: OutfitPreset[] = [
     name: "Panda Parka",
     category: "Hoodie",
     color: "Mocha",
+    pattern: "solid",
     badge: "PANDA",
     description:
       "Soft panda-inspired parka from moncheri with plush texture and a cozy fit.",
@@ -57,6 +60,7 @@ export const outfitPresets: OutfitPreset[] = [
     name: "Ribbon Dress",
     category: "Dress",
     color: "Beige",
+    pattern: "dots",
     badge: "RIBBON",
     description:
       "A soft ribbon-pattern dress with a large back bow and elegant silhouette.",
@@ -74,6 +78,7 @@ export const outfitPresets: OutfitPreset[] = [
     name: "Carrot Vest",
     category: "Vest",
     color: "Orange",
+    pattern: "solid",
     badge: "CARROT",
     description: "Warm carrot-themed fleece vest with a playful seasonal look.",
     platform: "Amazon",

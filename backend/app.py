@@ -215,6 +215,7 @@ def _build_virtual_clothing_item(payload, clothing_id):
     if not name:
         return None
     return {
+        "presetId": _normalize_text(payload.get("outfitId")),
         "clothingId": clothing_id or f"virtual_{uuid4().hex[:8]}",
         "ownerId": DEFAULT_OWNER_ID,
         "name": name,
@@ -223,9 +224,11 @@ def _build_virtual_clothing_item(payload, clothing_id):
         "size": _normalize_text(payload.get("size"), "M"),
         "brand": _normalize_text(payload.get("brand"), "PetFit"),
         "pattern": _normalize_text(payload.get("pattern"), "solid"),
+        "description": _normalize_text(payload.get("description")),
+        "material": _normalize_text(payload.get("material")),
+        "sourceUrl": _normalize_text(payload.get("sourceUrl")) or None,
         "seasonTags": _normalize_text_list(payload.get("seasonTags")) or ["casual"],
         "imageUrl": _normalize_text(payload.get("imageUrl")) or None,
-        "sourceUrl": _normalize_text(payload.get("sourceUrl")) or None,
     }
 
 
@@ -297,6 +300,13 @@ def _build_tryon_vertex_prompt(clothing_item, pet):
     category = _normalize_text(clothing_item.get("category"), "outfit")
     pattern = _detect_pattern_style(clothing_item)
     pet_type = _normalize_text((pet or {}).get("breed"), "dog")
+    brand = _normalize_text(clothing_item.get("brand"))
+    name = _normalize_text(clothing_item.get("name"))
+    description = _normalize_text(clothing_item.get("description"))
+    preset_id = _normalize_text(
+        clothing_item.get("presetId") or clothing_item.get("clothingId")
+    ).casefold()
+    name_lookup = f"{preset_id} {name.casefold()} {description.casefold()}"
 
     pattern_phrase = {
         "solid": "solid fabric",
@@ -305,23 +315,68 @@ def _build_tryon_vertex_prompt(clothing_item, pet):
         "dots": "small dotted details",
     }.get(pattern, "solid fabric")
 
+    specific_detail = (
+        f"The outfit name is '{name}'. "
+        if name
+        else ""
+    )
+    motif_instruction = ""
+    if "panda" in name_lookup:
+        motif_instruction = (
+            "Match the panda design exactly: use a plush white body, dark charcoal "
+            "shoulder band, panda ear details on the hood, and a small rounded panda tail patch."
+        )
+    elif "ribbon" in name_lookup or "bow" in name_lookup:
+        motif_instruction = (
+            "Match the ribbon dress details exactly: beige dress fabric, tiny embroidered "
+            "ribbon pattern, a mocha knit high-neck top section, and one oversized back bow."
+        )
+    elif "security" in name_lookup:
+        motif_instruction = (
+            "Match the security hoodie details exactly: vivid red fleece hoodie with a bold "
+            "white SECURITY print visible across the back panel."
+        )
+    elif "carrot" in name_lookup:
+        motif_instruction = (
+            "Match the carrot vest details exactly: fuzzy orange fleece body, green carrot-leaf "
+            "collar detail, and stitched yellow carrot-cut accents on the back."
+        )
+    elif "rain" in name_lookup or "raincoat" in name_lookup:
+        motif_instruction = (
+            "Match the raincoat details exactly: black lightweight outer shell, subtle hood, "
+            "and reflective silver sleeve stripes."
+        )
+
+    reference_instruction = (
+        "Use the second image as the clothing reference and faithfully recreate that exact "
+        "garment design, silhouette, colors, fabric texture, trim, prints, and decorative details. "
+    )
+    if not clothing_item.get("hasReferenceImage"):
+        reference_instruction = ""
+
     return (
         "Edit this dog photo. Keep the exact same dog, face, muzzle, ears, eyes, "
         "pose, body proportions, lighting, and background. "
+        f"{reference_instruction}"
+        f"{specific_detail}"
         f"This is a {pet_type}. Replace any visible harness or chest straps with a "
         f"realistic {color.lower()} {category.lower()} made for a dog, using {pattern_phrase}. "
+        f"Brand inspiration: {brand}. "
+        f"{description} "
+        f"{motif_instruction} "
         "Make the garment fit naturally around the neck, chest, and torso as if the dog is really wearing it. "
+        "Keep the garment anatomically correct for a dog and preserve both front legs. "
         "Do not change the dog's expression or add extra accessories. "
         "The final result must be photorealistic and believable."
     )
 
 
-def _extract_tryon_image(payload):
-    image_base64 = _normalize_text(payload.get("imageBase64"))
+def _extract_image_payload(payload, image_key, mime_key, default_mime_type="image/png"):
+    image_base64 = _normalize_text(payload.get(image_key))
     if not image_base64:
         return None, None
 
-    image_mime_type = _normalize_text(payload.get("imageMimeType"), "image/png")
+    image_mime_type = _normalize_text(payload.get(mime_key), default_mime_type)
     if image_base64.startswith("data:") and "," in image_base64:
         header, image_base64 = image_base64.split(",", 1)
         if ";base64" in header:
@@ -330,10 +385,29 @@ def _extract_tryon_image(payload):
     try:
         return base64.b64decode(image_base64), image_mime_type
     except (ValueError, TypeError):
-        raise ValueError("imageBase64")
+        raise ValueError(image_key)
 
 
-def _generate_vertex_tryon_image(image_bytes, image_mime_type, clothing_item, pet):
+def _extract_tryon_image(payload):
+    return _extract_image_payload(payload, "imageBase64", "imageMimeType")
+
+
+def _extract_outfit_reference_image(payload):
+    return _extract_image_payload(
+        payload,
+        "outfitReferenceImageBase64",
+        "outfitReferenceImageMimeType",
+    )
+
+
+def _generate_vertex_tryon_image(
+    image_bytes,
+    image_mime_type,
+    clothing_item,
+    pet,
+    outfit_reference_bytes=None,
+    outfit_reference_mime_type=None,
+):
     if genai is None or genai_types is None:
         raise RuntimeError("google-genai is not installed")
 
@@ -343,12 +417,18 @@ def _generate_vertex_tryon_image(image_bytes, image_mime_type, clothing_item, pe
         location=VERTEX_IMAGE_LOCATION,
     )
     prompt = _build_tryon_vertex_prompt(clothing_item, pet)
+    contents = [genai_types.Part.from_bytes(data=image_bytes, mime_type=image_mime_type)]
+    if outfit_reference_bytes is not None:
+        contents.append(
+            genai_types.Part.from_bytes(
+                data=outfit_reference_bytes,
+                mime_type=outfit_reference_mime_type or "image/png",
+            )
+        )
+    contents.append(prompt)
     response = client.models.generate_content(
         model=VERTEX_IMAGE_MODEL,
-        contents=[
-            genai_types.Part.from_bytes(data=image_bytes, mime_type=image_mime_type),
-            prompt,
-        ],
+        contents=contents,
         config=genai_types.GenerateContentConfig(
             response_modalities=[genai_types.Modality.TEXT, genai_types.Modality.IMAGE]
         ),
@@ -849,6 +929,21 @@ def tryon_demo():
         request_image, request_image_mime_type = _extract_tryon_image(payload)
     except ValueError:
         return _json_error(400, "imageBase64 is invalid", "imageBase64")
+    try:
+        outfit_reference_image, outfit_reference_mime_type = _extract_outfit_reference_image(
+            payload
+        )
+    except ValueError:
+        return _json_error(
+            400,
+            "outfitReferenceImageBase64 is invalid",
+            "outfitReferenceImageBase64",
+        )
+
+    clothing_item = {
+        **clothing_item,
+        "hasReferenceImage": outfit_reference_image is not None,
+    }
 
     if request_image is not None:
         try:
@@ -860,6 +955,8 @@ def tryon_demo():
                 request_image_mime_type,
                 clothing_item,
                 pet,
+                outfit_reference_image,
+                outfit_reference_mime_type,
             )
             preview_mode = "vertex"
         except Exception as error:
